@@ -1,12 +1,12 @@
 'use strict';
 // Phase E: removed duplicate Starfield.init() — db.js bootstrap handles it.
 // Phase E: wired daily-email AI job trigger button on home page.
+// v3: onboarding check now fully delegated to Onboarding.check() which uses
+//     AppState.getMeta backed by the reliable appMeta IDB store.
 (async () => {
   await AppState.init();
-
-  const onb = AppState.getMeta('onboardingComplete');
-  if (!onb) { Onboarding.start(); return; }
-
+  const done = AppState.getMeta('onboardingComplete');
+  if (!done) { Onboarding.start(); return; }
   Shell.bindNavButtons();
   HomeController.init();
 })();
@@ -34,7 +34,6 @@ const HomeController = {
     AppState.on('tasks',                () => this._loadTask());
   },
 
-  // ---- Daily email AI trigger -------------------------------------------
   _bindDailyEmail() {
     const btn    = document.getElementById('dailyEmailBtn');
     const status = document.getElementById('dailyEmailStatus');
@@ -49,9 +48,8 @@ const HomeController = {
         btn.disabled = false;
         if (!result || !result.subject) throw new Error('Empty result');
         if (status) status.textContent = '';
-        // Show accept/discard modal
         const accepted = await Shell.confirm(
-          `Send this email?\n\nSubject: ${result.subject}\n\n${result.body.slice(0, 300)}${result.body.length > 300 ? '…' : ''}`
+          `Send this email?\n\nSubject: ${result.subject}\n\n${result.body.slice(0,300)}${result.body.length>300?'…':''}`
         );
         if (accepted) {
           const blocks = AppState.get('scheduleBlocks');
@@ -69,9 +67,9 @@ const HomeController = {
   },
 
   _tick() {
-    const now  = new Date();
-    const tEl  = document.getElementById('clockTime');
-    const dEl  = document.getElementById('clockDate');
+    const now = new Date();
+    const tEl = document.getElementById('clockTime');
+    const dEl = document.getElementById('clockDate');
     if (tEl) tEl.textContent = Utils.formatTime(now);
     if (dEl) dEl.textContent = Utils.formatDate(now);
   },
@@ -143,21 +141,21 @@ const HomeController = {
     const subtasks = AppState.get('subtasks').filter(s => s.taskId === taskId && !s.isCompleted);
     if (!subtasks.length) return;
 
-    let subId = AppState.getMeta('currentSubtaskId');
+    let subId  = AppState.getMeta('currentSubtaskId');
     let subIdx = subtasks.findIndex(s => s.id === subId);
     if (subIdx === -1) subIdx = 0;
 
     let sub = subtasks[subIdx];
     let stepIdx = sub.currentStepIndex || 0;
-
     stepIdx += dir;
+
     if (stepIdx < 0) {
-      subIdx = Math.max(0, subIdx - 1);
-      sub = subtasks[subIdx];
+      subIdx  = Math.max(0, subIdx - 1);
+      sub     = subtasks[subIdx];
       stepIdx = sub.steps.length - 1;
     } else if (stepIdx >= sub.steps.length) {
-      subIdx = Math.min(subtasks.length - 1, subIdx + 1);
-      sub = subtasks[subIdx];
+      subIdx  = Math.min(subtasks.length - 1, subIdx + 1);
+      sub     = subtasks[subIdx];
       stepIdx = 0;
     }
 
@@ -167,7 +165,7 @@ const HomeController = {
   },
 
   _checkFocusState() {
-    const active = AppState.getMeta('focusActive');
+    const active     = AppState.getMeta('focusActive');
     const clockTime  = document.getElementById('clockTime');
     const clockDate  = document.getElementById('clockDate');
     const focusTimer = document.getElementById('homeFocusTimer');

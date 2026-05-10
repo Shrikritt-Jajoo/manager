@@ -34,13 +34,14 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
 /* ---- Layout ---- */
 .settings-layout {
   position: relative; z-index: 7;
-  padding: 118px var(--sp8) var(--sp8);
+  padding: 118px var(--sp8) 80px;
   max-width: 600px; margin: 0 auto;
 }
 
 /* ---- Sections / panels ---- */
 .settings-section {
   display: flex; flex-direction: column; gap: var(--sp5);
+  padding-bottom: var(--sp6);
 }
 .settings-section.hidden { display: none; }
 

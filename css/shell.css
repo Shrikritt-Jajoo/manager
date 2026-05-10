@@ -1,3 +1,14 @@
+/* ── Utility ── */
+.hidden { display: none !important; }
+
+/* ── Frosted glass utility — apply to any panel/card over the starfield ── */
+.glass {
+  background: rgba(8, 8, 14, 0.72);
+  backdrop-filter: blur(20px) saturate(1.5) brightness(0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5) brightness(0.9);
+  border: 1px solid rgba(245, 247, 251, 0.07);
+}
+
 /* ── UI wrapper ── */
 .ui { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
 .ui * { pointer-events: auto; }
@@ -87,15 +98,12 @@
   pointer-events: none;
   white-space: nowrap;
 }
-#toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ── Confirm modal ── */
 .confirm-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.72);
+  background: rgba(0,0,0,.60);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
@@ -104,7 +112,7 @@
 .confirm-box {
   min-width: 320px; max-width: 440px;
   padding: var(--sp8);
-  background: rgba(10,10,10,.96);
+  /* .glass class applied in JS adds background + backdrop-filter */
   clip-path: var(--clip);
   display: flex; flex-direction: column; gap: var(--sp5);
 }
@@ -126,17 +134,22 @@
 /* ── Onboarding overlay ── */
 .onb-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.80);
+  background: rgba(0,0,0,.70);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   z-index: 500;
   display: flex; align-items: center; justify-content: center;
 }
+/* .onb-box now uses .glass for its own frosted surface */
 .onb-box {
-  width: min(560px, 90vw);
+  width: min(560px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex; flex-direction: column; gap: var(--sp8);
   align-items: center; text-align: center;
-  padding: var(--sp8) 0;
+  padding: var(--sp8);
+  /* clip-path intentionally omitted — glass border-radius looks better here */
+  border-radius: 2px;
 }
 .onb-title {
   font-size: clamp(1.4rem, 3vw, 2rem);
@@ -154,10 +167,10 @@
   font-size: 14px; color: var(--text);
   transition: border-color var(--t-base);
 }
-.onb-input:focus { border-bottom-color: var(--accent); }
+.onb-input:focus { border-bottom-color: var(--accent); outline: none; }
 .onb-input::placeholder { color: var(--text-faint); }
 .onb-dots { display: flex; gap: 8px; }
-.onb-dot  {
+.onb-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
   background: rgba(245,247,251,.22);
@@ -165,7 +178,10 @@
 }
 .onb-dot.active { background: var(--accent); }
 .onb-actions { display: flex; gap: var(--sp3); align-items: center; }
-.onb-skip { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-faint); background: none; border: none; cursor: pointer; }
+.onb-skip {
+  font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--text-faint); background: none; border: none; cursor: pointer;
+}
 .onb-skip:hover { color: var(--text-muted); }
 
 /* energy dot row */
@@ -177,9 +193,15 @@
 }
 .e-dot.on { background: var(--accent); }
 .onb-slots-list { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: var(--sp2); }
-.onb-slot-item { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+.onb-slot-item {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--text-muted);
+}
 .onb-slot-item button { font-size: 11px; background: none; border: none; color: var(--text-faint); cursor: pointer; }
-.onb-slot-row { display: flex; gap: var(--sp3); align-items: center; flex-wrap: wrap; justify-content: center; }
+.onb-slot-row {
+  display: flex; gap: var(--sp3); align-items: center; flex-wrap: wrap;
+  justify-content: center; max-width: 380px; margin: 0 auto;
+}
 .onb-slot-row input[type=time] {
   background: transparent; border: none;
   border-bottom: 1px solid rgba(245,247,251,.18);

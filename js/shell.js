@@ -2,17 +2,10 @@
 const Shell = {
   _toastTimer: null,
 
-  // Phase 0: added type parameter for AI system compatibility
-  // type: 'info' | 'success' | 'error' | 'warning' (currently all styled the same;
-  //       type is accepted so ai.js calling Shell.toast(msg, type, duration) does not throw)
   toast(msg, typeOrDuration, duration) {
     let dur = 2800;
-    // Handle both old signature toast(msg, duration) and new toast(msg, type, duration)
-    if (typeof typeOrDuration === 'number') {
-      dur = typeOrDuration;
-    } else if (typeof duration === 'number') {
-      dur = duration;
-    }
+    if (typeof typeOrDuration === 'number') dur = typeOrDuration;
+    else if (typeof duration === 'number')  dur = duration;
     const el = document.getElementById('toast');
     if (!el) return;
     el.textContent = msg;
@@ -26,7 +19,7 @@ const Shell = {
       const ov = document.createElement('div');
       ov.className = 'confirm-overlay';
       ov.innerHTML = `
-        <div class="confirm-box" role="dialog" aria-modal="true">
+        <div class="confirm-box glass" role="dialog" aria-modal="true">
           <div class="confirm-msg">${Utils.escapeHtml(msg)}</div>
           <div class="confirm-actions">
             <button class="abtn sm" id="cfNo">Cancel</button>
@@ -48,8 +41,6 @@ const Shell = {
   }
 };
 
-// Phase 0: AppShell alias — ai.js from chronoflow calls AppShell.toast()
-// This single alias means ai.js can be copied verbatim with zero changes.
 const AppShell = Shell;
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
@@ -65,7 +56,7 @@ const Onboarding = {
     await AppState.init();
     const done = AppState.getMeta('onboardingComplete');
     if (!done) this.start();
-    else { this._bootPage(); }
+    else this._bootPage();
   },
 
   _bootPage() {
@@ -81,7 +72,6 @@ const Onboarding = {
   _render() {
     const existing = document.getElementById('onbOverlay');
     if (existing) existing.remove();
-
     const ov = document.createElement('div');
     ov.id = 'onbOverlay';
     ov.className = 'onb-overlay';
@@ -100,14 +90,17 @@ const Onboarding = {
     const d = this._dots();
     switch (this._step) {
       case 0: return `
-        <div class="onb-box">
+        <div class="onb-box glass">
           <div class="onb-title">ChronoFlow</div>
           <div class="onb-sub">Your focus OS. It hides when you work.<br>It surfaces when you need it.<br>Let's set up your workspace.</div>
-          <button class="abtn" id="onbNext">Begin</button>
+          <div class="onb-actions">
+            <button class="onb-skip" id="onbSkipAll">Skip setup →</button>
+            <button class="abtn" id="onbNext">Begin</button>
+          </div>
           <div class="onb-dots">${d}</div>
         </div>`;
       case 1: return `
-        <div class="onb-box">
+        <div class="onb-box glass">
           <div class="onb-title">What are you working on?</div>
           <div class="onb-sub">Add your first goal. ChronoFlow can use AI to break it into tasks for you.</div>
           <div class="onb-form">
@@ -121,7 +114,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 2: return `
-        <div class="onb-box">
+        <div class="onb-box glass">
           <div class="onb-title">When do you work?</div>
           <div class="onb-sub">Add your available time slots. ChronoFlow schedules tasks inside these windows.</div>
           <div class="onb-form">
@@ -145,7 +138,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 3: return `
-        <div class="onb-box">
+        <div class="onb-box glass">
           <div class="onb-title">How long is your default focus session?</div>
           <div class="onb-sub">You can change this anytime in Settings.</div>
           <div class="onb-timer-opts">
@@ -159,7 +152,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 4: return `
-        <div class="onb-box">
+        <div class="onb-box glass">
           <div class="onb-title">Connect Gmail</div>
           <div class="onb-sub">ChronoFlow can email your daily schedule each morning.<br><span style="font-size:11px;opacity:.5">Requires running via http://localhost — see README.</span></div>
           <div class="onb-actions">
@@ -169,7 +162,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 5: return `
-        <div class="onb-box">
+        <div class="onb-box glass">
           <div class="onb-title">You're ready.</div>
           <div class="onb-sub">Move your mouse to reveal the interface.<br>Start by adding your first task in the Planner.</div>
           <div class="onb-actions">
@@ -182,7 +175,8 @@ const Onboarding = {
   },
 
   _slotsHTML() {
-    if (!this._slots.length) return '<div style="font-size:11px;color:var(--text-faint)">No slots added yet.</div>';
+    if (!this._slots.length)
+      return '<div style="font-size:11px;color:var(--text-faint)">No slots added yet.</div>';
     return this._slots.map((sl, i) =>
       `<div class="onb-slot-item">
         <span>${Utils.escapeHtml(sl.label)} · ${sl.startT}–${sl.endT} · E${sl.energy}</span>
@@ -197,11 +191,14 @@ const Onboarding = {
   },
 
   _bindStep(ov) {
-    const back = ov.querySelector('#onbBack');
-    if (back) back.onclick = () => { this._step = Math.max(0, this._step - 1); this._render(); };
+    // Global skip-all button (step 0 only)
+    const skipAll = ov.querySelector('#onbSkipAll');
+    if (skipAll) skipAll.onclick = async () => { await this._finish(); };
 
     const next = ov.querySelector('#onbNext');
     const skip = ov.querySelector('#onbSkip');
+
+    if (this._step === 0 && next) next.onclick = () => { this._step++; this._render(); };
 
     if (this._step === 1 && next) {
       next.onclick = () => {
@@ -210,6 +207,7 @@ const Onboarding = {
         this._step++; this._render();
       };
     }
+    if (this._step === 1 && skip) skip.onclick = () => { this._step++; this._render(); };
 
     if (this._step === 2) {
       ov.querySelectorAll('.e-dot').forEach(dot => {
@@ -222,7 +220,6 @@ const Onboarding = {
           });
         };
       });
-
       const addSlotBtn = ov.querySelector('#addSlotBtn');
       if (addSlotBtn) addSlotBtn.onclick = () => {
         const label  = ov.querySelector('#slotLabel').value.trim() || 'Work';
@@ -235,11 +232,9 @@ const Onboarding = {
         this._bindSlotRemove(ov);
       };
       this._bindSlotRemove(ov);
-
       if (skip) skip.onclick = async () => {
-        if (!this._slots.length) {
+        if (!this._slots.length)
           this._slots.push({ label:'Work', startT:'09:00', endT:'17:00', energy:3 });
-        }
         this._step++; this._render();
       };
       if (next) next.onclick = () => { this._step++; this._render(); };
@@ -259,7 +254,8 @@ const Onboarding = {
     if (this._step === 4) {
       const gmailBtn = ov.querySelector('#gmailOnbBtn');
       if (gmailBtn) gmailBtn.onclick = async () => {
-        try { await Gmail.connect(); Shell.toast('Gmail connected!'); } catch(e) { Shell.toast('Gmail connect failed — skip for now'); }
+        try { await Gmail.connect(); Shell.toast('Gmail connected!'); }
+        catch(e) { Shell.toast('Gmail connect failed — skip for now'); }
         this._step++; this._render();
       };
       if (skip) skip.onclick = () => { this._step++; this._render(); };
@@ -269,9 +265,6 @@ const Onboarding = {
       const fin = ov.querySelector('#onbFinish');
       if (fin) fin.onclick = async () => { await this._finish(); };
     }
-
-    if (this._step === 0 && next) next.onclick = () => { this._step++; this._render(); };
-    if (skip && this._step === 1) skip.onclick = () => { this._step++; this._render(); };
   },
 
   _bindSlotRemove(ov) {
@@ -292,6 +285,11 @@ const Onboarding = {
       });
     }
 
+    // If no slots were added (e.g. skip-all from step 0), use 9-5 default
+    if (!this._slots.length) {
+      this._slots.push({ label:'Work', startT:'09:00', endT:'17:00', energy:3 });
+    }
+
     const today = new Date();
     for (const sl of this._slots) {
       const [sh,sm] = sl.startT.split(':').map(Number);
@@ -305,7 +303,6 @@ const Onboarding = {
       });
     }
 
-    // saveSettings still works exactly as before
     await AppState.saveSettings({ focusDuration: this._focusDur });
     await AppState.setMeta('onboardingComplete', true);
 

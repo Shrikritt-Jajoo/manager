@@ -1,7 +1,7 @@
 body.stats-page { overflow: auto; height: auto; min-height: 100vh; }
 .stats-layout {
   position: relative; z-index: 7;
-  padding: 80px var(--sp8) var(--sp8);
+  padding: 80px var(--sp8) 80px;
   max-width: 860px; margin: 0 auto;
   display: flex; flex-direction: column; gap: var(--sp8);
 }
@@ -10,7 +10,11 @@ body.stats-page { overflow: auto; height: auto; min-height: 100vh; }
 }
 .metric-card {
   padding: var(--sp6);
-  background: rgba(255,255,255,.025);
+  /* frosted glass metric cards */
+  background: rgba(8, 8, 14, 0.60);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(245, 247, 251, 0.06);
   clip-path: var(--clip);
   display: flex; flex-direction: column; gap: var(--sp3);
 }

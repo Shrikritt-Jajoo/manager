@@ -12,7 +12,18 @@ body.planner-page {
   position: relative; z-index: 7;
 }
 /* ── Sidebar / Panel shared ── */
-.panel { display: flex; flex-direction: column; gap: var(--sp5); }
+.panel {
+  display: flex; flex-direction: column; gap: var(--sp5);
+  /* frosted glass surface for all three planner columns */
+  background: rgba(8, 8, 14, 0.60);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(245, 247, 251, 0.05);
+  padding: var(--sp5);
+  border-radius: 2px;
+  /* align to top of grid row */
+  align-self: start;
+}
 .section-head {
   font-size: 10px; letter-spacing: .22em;
   text-transform: uppercase; color: var(--text-muted);

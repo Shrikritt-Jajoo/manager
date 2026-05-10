@@ -11,31 +11,46 @@ body.focus-page { overflow: hidden; }
   font-size: clamp(5rem, 13.5vw, 10.8rem);
   font-weight: 260; letter-spacing: .22em;
   color: var(--accent); line-height: .9;
-  margin-left: .22em;
+  text-align: center; width: 100%;
+  /* removed margin-left bias — was causing optical right-shift */
 }
 .focus-timer-big.paused { opacity: .55; }
 .focus-prog-wrap { width: min(400px, 80vw); }
 .focus-controls { display: flex; gap: var(--sp4); margin-top: var(--sp3); }
+
 /* Post-session modal */
 .session-modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.78);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0,0,0,.70);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex; align-items: center; justify-content: center;
   z-index: 400;
+  /* allow internal scroll on short viewports */
+  overflow-y: auto;
+  padding: var(--sp6) 0;
 }
 .session-modal {
   width: min(440px, 90vw);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   padding: var(--sp8);
-  background: rgba(8,8,8,.96);
+  background: rgba(8, 8, 14, 0.82);
+  border: 1px solid rgba(245, 247, 251, 0.07);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   clip-path: var(--clip);
   display: flex; flex-direction: column; gap: var(--sp5);
 }
 .sm-title  { font-size: 16px; letter-spacing: .14em; text-transform: uppercase; }
 .sm-sub    { font-size: 13px; color: var(--text-muted); }
 .sm-label  { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted); }
-.sm-range  { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.sm-range  {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  touch-action: none;   /* prevents scroll-hijack on touch devices */
+}
 .sm-range-val { font-size: 13px; color: var(--accent); }
 .sm-notes  {
   background: transparent; border: none;
@@ -43,5 +58,5 @@ body.focus-page { overflow: hidden; }
   color: var(--text); font-size: 13px;
   padding: var(--sp2) 0; resize: none; width: 100%;
 }
-.sm-notes:focus { border-bottom-color: var(--accent); }
+.sm-notes:focus { border-bottom-color: var(--accent); outline: none; }
 .sm-actions { display: flex; gap: var(--sp3); justify-content: flex-end; }

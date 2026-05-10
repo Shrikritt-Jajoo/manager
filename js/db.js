@@ -1,26 +1,26 @@
 'use strict';
 // =========================================================
-// manager db.js  v2
+// manager db.js  v3
 // Dual persistence: JSON file via server (preferred)
 //                   IndexedDB fallback (standalone / file://)
 // Phase 0 upgrade: added settings, gmailConfig, aiConfig,
 //                  registeredAiJobs stores; migrates old meta
-// Phase A upgrade: DOMContentLoaded bootstrap — fires
-//                  ChronoFlow.detect() then Starfield.init()
-//                  so server mode is resolved before any page
-//                  module calls AppState.init().
+// Phase A upgrade: DOMContentLoaded bootstrap
+// v3 upgrade (Option B): added 'appMeta' store (keyPath:'key')
+//   getMeta/setMeta now use appMeta as primary; old 'meta'
+//   store is read-once for migration then ignored.
 // =========================================================
 
 // ---- Config ------------------------------------------------------------
 const DB_NAME    = 'chronoflow';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // All stores that use keyPath:'id'
 const ID_STORES  = ['tasks','subtasks','slots','scheduleBlocks',
                     'focusSessions','goals','registeredAiJobs'];
 
 // Singleton stores that use keyPath:'key'
-const KP_KEY_STORES = new Set(['settings','gmailConfig','aiConfig']);
+const KP_KEY_STORES = new Set(['settings','gmailConfig','aiConfig','appMeta']);
 
 // Combined list for IDB creation
 const STORES = [...ID_STORES, ...KP_KEY_STORES];
@@ -127,45 +127,54 @@ const _idb = {
 
       req.onupgradeneeded = e => {
         const db  = e.target.result;
-        const tx  = e.target.transaction; // the version-change transaction
+        const tx  = e.target.transaction;
 
-        // 1. Create new stores that don't exist yet
+        // Create all ID stores
         for (const store of ID_STORES) {
           if (!db.objectStoreNames.contains(store))
             db.createObjectStore(store, { keyPath: 'id' });
         }
+        // Create all keyPath:'key' stores (includes new 'appMeta')
         for (const store of KP_KEY_STORES) {
           if (!db.objectStoreNames.contains(store))
             db.createObjectStore(store, { keyPath: 'key' });
         }
 
-        // 2. One-time migration: copy old meta rows into their proper stores
-        //    Runs only when upgrading from v1 (meta store exists)
+        // One-time migration from v1 meta store -> dedicated stores
         if (db.objectStoreNames.contains('meta') && e.oldVersion < 2) {
           const metaOS = tx.objectStore('meta');
-
-          // Migrate settings
           metaOS.get('settings').onsuccess = ev => {
             const val = ev.target.result && ev.target.result.value;
             if (val && typeof val === 'object') {
-              tx.objectStore('settings').put(
-                Object.assign({ key: 'main' }, val)
-              );
+              tx.objectStore('settings').put(Object.assign({ key: 'main' }, val));
             }
           };
-
-          // Migrate gmailToken -> gmailConfig
           metaOS.get('gmailToken').onsuccess = ev => {
             const val = ev.target.result && ev.target.result.value;
             if (val) {
               tx.objectStore('gmailConfig').put({
-                key: 'main',
-                clientId:    '',
-                accessToken: val.access_token || '',
-                expiresAt:   val.expires_at   || 0
+                key: 'main', clientId: '',
+                accessToken: val.access_token || '', expiresAt: val.expires_at || 0
               });
             }
           };
+        }
+
+        // v3 migration: copy surviving meta keys from old 'meta' store -> appMeta
+        if (db.objectStoreNames.contains('meta') && e.oldVersion < 3) {
+          const metaOS    = tx.objectStore('meta');
+          const appMetaOS = tx.objectStore('appMeta');
+          const metaKeys  = ['currentTaskId','currentSubtaskId','focusActive',
+                             'focusStartedAt','focusTimerRemain','onboardingComplete',
+                             'streakData'];
+          for (const k of metaKeys) {
+            metaOS.get(k).onsuccess = ev => {
+              const row = ev.target.result;
+              if (row !== undefined) {
+                appMetaOS.put({ key: k, value: row.value !== undefined ? row.value : row });
+              }
+            };
+          }
         }
       };
 
@@ -226,58 +235,56 @@ const _idb = {
 };
 
 // ---- Unified DB facade -------------------------------------------------
-// All state.js code uses DB.get / DB.put / DB.getAll / DB.delete / DB.clear.
-// Implementation is swapped transparently based on server detection.
 const DB = {
   async put(store, value) {
-    return ChronoFlow.serverMode
-      ? _serverPut(store, value)
-      : _idb.put(store, value);
+    return ChronoFlow.serverMode ? _serverPut(store, value) : _idb.put(store, value);
   },
-
   async get(store, key) {
-    return ChronoFlow.serverMode
-      ? _serverGet(store, key)
-      : _idb.get(store, key);
+    return ChronoFlow.serverMode ? _serverGet(store, key) : _idb.get(store, key);
   },
-
   async getAll(store) {
-    return ChronoFlow.serverMode
-      ? _serverGetAll(store)
-      : _idb.getAll(store);
+    return ChronoFlow.serverMode ? _serverGetAll(store) : _idb.getAll(store);
   },
-
   async delete(store, key) {
-    return ChronoFlow.serverMode
-      ? _serverDelete(store, key)
-      : _idb.delete(store, key);
+    return ChronoFlow.serverMode ? _serverDelete(store, key) : _idb.delete(store, key);
   },
-
   async clear(store) {
-    return ChronoFlow.serverMode
-      ? _serverClear(store)
-      : _idb.clear(store);
+    return ChronoFlow.serverMode ? _serverClear(store) : _idb.clear(store);
   },
 
-  // ---- Legacy helpers preserved for shell.js / Onboarding compat -------
+  // ---- Meta helpers — now backed by 'appMeta' store (Option B) ----------
+  // getMeta: reads from appMeta first; falls back to old 'meta' store
+  // (migration read only — once the user has appMeta the fallback is never hit).
   async getMeta(key) {
+    // settings is still its own dedicated store
     if (key === 'settings') {
-      const row = await this.get('settings', 'main');
-      return row || undefined;
+      return this.get('settings', 'main');
     }
+
+    // Try appMeta first (the new primary store)
+    const appMetaRow = await this.get('appMeta', key).catch(() => undefined);
+    if (appMetaRow !== undefined) return appMetaRow.value;
+
+    // Fallback: read from old 'meta' IDB store for one-time migration on v2 installs
     if (!ChronoFlow.serverMode) {
       try {
         const db = await _idb.open();
         if (db.objectStoreNames.contains('meta')) {
-          return new Promise(resolve => {
+          const legacyVal = await new Promise(resolve => {
             const tx  = db.transaction('meta', 'readonly');
             const req = tx.objectStore('meta').get(key);
             req.onsuccess = () => resolve(req.result ? req.result.value : undefined);
             req.onerror   = () => resolve(undefined);
           });
+          // Promote the value into appMeta so next read hits the fast path
+          if (legacyVal !== undefined) {
+            await this.setMeta(key, legacyVal);
+            return legacyVal;
+          }
         }
       } catch { /* ignore */ }
     }
+
     return undefined;
   },
 
@@ -288,19 +295,8 @@ const DB = {
         : { key: 'main', value };
       return this.put('settings', row);
     }
-    if (!ChronoFlow.serverMode) {
-      try {
-        const db = await _idb.open();
-        if (db.objectStoreNames.contains('meta')) {
-          return new Promise((resolve, reject) => {
-            const tx = db.transaction('meta', 'readwrite');
-            tx.objectStore('meta').put({ key, value });
-            tx.oncomplete = () => resolve();
-            tx.onerror    = () => reject(tx.error);
-          });
-        }
-      } catch { /* ignore */ }
-    }
+    // Write to appMeta store
+    return this.put('appMeta', { key, value });
   }
 };
 
@@ -346,29 +342,9 @@ async function restoreVersion(name) {
 }
 
 // ---- Phase A: page bootstrap -------------------------------------------
-// Runs on every page automatically because db.js is the first script tag.
-// 1. Fires ChronoFlow.detect() — resolves server vs IDB mode ASAP.
-// 2. After detect resolves, hands off to Starfield.init() (defined in
-//    starfield.js which loads after db.js).
-// Page-specific JS (home.js, planner.js, etc.) call Onboarding.check()
-// inside their own DOMContentLoaded — by then detect() is already settled
-// because all scripts are synchronous and detect() is a shared Promise
-// that caches its result in ChronoFlow._ready.
-//
-// Why here and not in each HTML file:
-//   - Single source of truth — no risk of one page forgetting the call.
-//   - No HTML files need to change.
-//   - detect() is idempotent; calling it twice is harmless.
 document.addEventListener('DOMContentLoaded', () => {
-  // Kick off server detection immediately (non-blocking).
-  // The Promise is cached in ChronoFlow._ready so any later await
-  // ChronoFlow.detect() just gets the already-resolved value.
   ChronoFlow.detect().then(serverMode => {
     if (serverMode) console.info('[manager] server mode active');
   });
-
-  // Init starfield on every page that has a #starCanvas element.
-  if (typeof Starfield !== 'undefined') {
-    Starfield.init();
-  }
+  if (typeof Starfield !== 'undefined') Starfield.init();
 });

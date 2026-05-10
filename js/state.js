@@ -1,33 +1,25 @@
 'use strict';
 // =========================================================
-// manager state.js  v2
-// Extended from v1: added settings/gmailConfig/aiConfig/
-//                   registeredAiJobs stores + AI job seeding.
-// ALL v1 APIs preserved: getMeta, setMeta, getSettings,
-//                        saveSettings, onMeta — Onboarding
-//                        and starfield.js continue to work.
+// manager state.js  v3
+// Extended from v2: meta init now reads from appMeta store
+//                   (Option B). All other APIs unchanged.
 // =========================================================
 
 const AppState = (() => {
-  // ── In-memory caches ──────────────────────────────────────────────────
   const _data = {
     tasks:[], subtasks:[], slots:[], scheduleBlocks:[],
     focusSessions:[], goals:[], registeredAiJobs:[]
   };
 
-  // Singleton config objects (keyed by 'main')
   let _settings   = null;
   let _gmailCfg   = null;
   let _aiCfg      = null;
 
-  // Legacy meta cache (for non-settings meta keys via DB.getMeta)
+  // In-memory meta cache
   const _meta  = {};
+  const _subs  = {};
+  const _msubs = {};
 
-  // Subscriptions: store/key -> [fn, ...]
-  const _subs  = {};  // store name -> [fn]
-  const _msubs = {};  // meta key  -> [fn]
-
-  // ── Default settings (merged on top of persisted) ─────────────────────
   const DEFAULT_SETTINGS = {
     grain:          'medium',
     starSpeed:      'slow',
@@ -45,81 +37,59 @@ const AppState = (() => {
     autoSend:       false
   };
 
-  // ── DEFAULT AI JOBS (seeded once on first init) ───────────────────────
   const DEFAULT_AI_JOBS = [
     {
-      id: 'goal-decomposition',
-      jobId: 'goal-decomposition',
-      label: 'Goal Decomposition',
-      trigger: 'planner-sidebar',
+      id: 'goal-decomposition', jobId: 'goal-decomposition',
+      label: 'Goal Decomposition', trigger: 'planner-sidebar',
       systemPrompt: 'You are a productivity coach embedded in ChronoFlow, a task and time-management app. You have full knowledge of the app architecture from AGENTS.md. Your job is to help the user break down a vague goal into concrete, schedulable tasks that fit inside their available time slots. Always respond with valid JSON when asked to output data. Never modify locked files. Always go through accept/reject flow — never auto-apply.',
       userMessageTemplate: 'My goal: {goalTitle}\nDescription: {goalDescription}\nExisting tasks: {tasks}\nAvailable slots: {slots}\nToday: {today}\n\nHelp me break this goal into concrete subtasks I can schedule.',
       inputSources: ['tasks','slots','goals','settings'],
       outputSchema: { type: 'data', store: 'tasks', items: [] },
-      acceptRejectPerItem: true,
-      lockedFiles: [],
-      addedBy: 'system',
+      acceptRejectPerItem: true, lockedFiles: [], addedBy: 'system',
       addedAt: new Date().toISOString()
     },
     {
-      id: 'task-critique',
-      jobId: 'task-critique',
-      label: 'Task Critique',
-      trigger: 'planner-sidebar',
+      id: 'task-critique', jobId: 'task-critique',
+      label: 'Task Critique', trigger: 'planner-sidebar',
       systemPrompt: 'You are a productivity coach in ChronoFlow. Review the user\'s task list and suggest improvements: better time estimates, clearer next steps, priority adjustments, or tasks to remove. Respond with valid JSON. Never auto-apply — always present suggestions for user review.',
       userMessageTemplate: 'My current tasks: {tasks}\nMy slots: {slots}\nSettings: {settings}\nToday: {today}\n\nReview my task list and suggest improvements.',
       inputSources: ['tasks','slots','settings'],
       outputSchema: { type: 'data', store: 'tasks', items: [] },
-      acceptRejectPerItem: true,
-      lockedFiles: [],
-      addedBy: 'system',
+      acceptRejectPerItem: true, lockedFiles: [], addedBy: 'system',
       addedAt: new Date().toISOString()
     },
     {
-      id: 'daily-email',
-      jobId: 'daily-email',
-      label: 'Daily Email Summary',
-      trigger: 'home',
+      id: 'daily-email', jobId: 'daily-email',
+      label: 'Daily Email Summary', trigger: 'home',
       systemPrompt: 'You are a scheduling assistant in ChronoFlow. Compose a concise, well-formatted plain-text daily schedule email for the user. Include their scheduled blocks, top priority tasks, and any deadlines today. Keep it under 300 words.',
       userMessageTemplate: 'Schedule blocks: {scheduleBlocks}\nTasks: {tasks}\nSettings: {settings}\nToday: {today}\n\nWrite my daily schedule email.',
       inputSources: ['scheduleBlocks','tasks','settings'],
       outputSchema: { type: 'email', subject: '', body: '' },
-      acceptRejectPerItem: false,
-      lockedFiles: [],
-      addedBy: 'system',
+      acceptRejectPerItem: false, lockedFiles: [], addedBy: 'system',
       addedAt: new Date().toISOString()
     },
     {
-      id: 'backlog-cleanup',
-      jobId: 'backlog-cleanup',
-      label: 'Backlog Cleanup',
-      trigger: 'planner-sidebar',
+      id: 'backlog-cleanup', jobId: 'backlog-cleanup',
+      label: 'Backlog Cleanup', trigger: 'planner-sidebar',
       systemPrompt: 'You are a productivity coach in ChronoFlow. Help the user clean up their task backlog by identifying stale tasks (no progress, old deadline, low priority) and suggesting archiving, deletion, or re-prioritisation. Respond with valid JSON suggestions.',
       userMessageTemplate: 'All tasks: {tasks}\nFocus sessions: {focusSessions}\nToday: {today}\n\nHelp me clean up my backlog.',
       inputSources: ['tasks','focusSessions'],
       outputSchema: { type: 'data', store: 'tasks', items: [] },
-      acceptRejectPerItem: true,
-      lockedFiles: [],
-      addedBy: 'system',
+      acceptRejectPerItem: true, lockedFiles: [], addedBy: 'system',
       addedAt: new Date().toISOString()
     },
     {
-      id: 'weekly-review',
-      jobId: 'weekly-review',
-      label: 'Weekly Review',
-      trigger: 'stats',
+      id: 'weekly-review', jobId: 'weekly-review',
+      label: 'Weekly Review', trigger: 'stats',
       systemPrompt: 'You are a productivity coach in ChronoFlow. Generate a concise weekly review in Markdown based on the user\'s focus sessions, completed tasks, and stats. Include: what went well, what to improve, and 3 focus intentions for next week.',
       userMessageTemplate: 'Focus sessions this week: {focusSessions}\nCompleted tasks: {tasks}\nToday: {today}\n\nWrite my weekly review.',
       inputSources: ['focusSessions','tasks'],
       outputSchema: { type: 'weekly-review', markdown: '' },
-      acceptRejectPerItem: false,
-      lockedFiles: [],
-      addedBy: 'system',
+      acceptRejectPerItem: false, lockedFiles: [], addedBy: 'system',
       addedAt: new Date().toISOString()
     }
   ];
 
-  // ── Private helpers ───────────────────────────────────────────────────
   function _emit(store) {
     (_subs[store] || []).forEach(fn => fn(
       KP_KEY_STORES.has(store) ? _getSingleton(store) : _data[store]
@@ -127,7 +97,7 @@ const AppState = (() => {
   }
 
   function _getSingleton(store) {
-    if (store === 'settings')   return _settings;
+    if (store === 'settings')    return _settings;
     if (store === 'gmailConfig') return _gmailCfg;
     if (store === 'aiConfig')    return _aiCfg;
     return null;
@@ -136,7 +106,6 @@ const AppState = (() => {
   function _applySettings(s) {
     if (!s) return;
     document.documentElement.style.setProperty('--accent', s.accentColor || '#BFAE99');
-    // font intentionally removed per Phase 0.5 — use device default
     const grainMap = { none:[0,0], light:[.28,.18], medium:[.47,.30], heavy:[.62,.42] };
     const g = grainMap[s.grain] || grainMap.medium;
     document.documentElement.style.setProperty('--grain-opacity-1', g[0]);
@@ -144,9 +113,8 @@ const AppState = (() => {
   }
 
   return {
-    // ── Initialise ───────────────────────────────────────────────────────
     async init() {
-      // 1. Load all array stores
+      // 1. Load array stores
       for (const s of Object.keys(_data)) {
         _data[s] = await DB.getAll(s);
       }
@@ -157,11 +125,11 @@ const AppState = (() => {
       _gmailCfg = await DB.get('gmailConfig', 'main') || {
         key: 'main', clientId: '', accessToken: '', expiresAt: 0
       };
-      _aiCfg    = await DB.get('aiConfig', 'main') || {
+      _aiCfg = await DB.get('aiConfig', 'main') || {
         key: 'main', geminiKey: '', model: 'gemini-2.0-flash'
       };
 
-      // 3. Load legacy meta keys (for Onboarding compat)
+      // 3. Load meta keys — now from appMeta via DB.getMeta (Option B)
       const metaKeys = ['currentTaskId','currentSubtaskId','focusActive',
                         'focusStartedAt','focusTimerRemain','onboardingComplete',
                         'streakData'];
@@ -181,7 +149,6 @@ const AppState = (() => {
       _applySettings(_settings);
     },
 
-    // ── Array store API (existing — unchanged) ───────────────────────────
     get(store) { return _data[store] || []; },
 
     async add(store, item) {
@@ -207,22 +174,20 @@ const AppState = (() => {
       _emit(store);
     },
 
-    // ── Singleton store API (new) ────────────────────────────────────────
-    // Used by ai.js, settings.js for aiConfig / gmailConfig / settings
     getConfig(store) { return _getSingleton(store); },
 
     async setConfig(store, value) {
       const row = Object.assign({ key: 'main' }, value);
-      if (store === 'settings')    _settings  = row;
-      if (store === 'gmailConfig') _gmailCfg  = row;
-      if (store === 'aiConfig')    _aiCfg     = row;
+      if (store === 'settings')    _settings = row;
+      if (store === 'gmailConfig') _gmailCfg = row;
+      if (store === 'aiConfig')    _aiCfg    = row;
       await DB.put(store, row);
       if (store === 'settings') _applySettings(row);
       _emit(store);
     },
 
-    // ── Legacy API — PRESERVED for shell.js / Onboarding / starfield ─────
-    getMeta(key)     { return _meta[key]; },
+    // Legacy API — preserved; now writes to appMeta
+    getMeta(key)  { return _meta[key]; },
 
     async setMeta(key, value) {
       _meta[key] = value;
@@ -230,7 +195,7 @@ const AppState = (() => {
       (_msubs[key] || []).forEach(fn => fn(value));
     },
 
-    getSettings()    { return _settings || DEFAULT_SETTINGS; },
+    getSettings() { return _settings || DEFAULT_SETTINGS; },
 
     async saveSettings(patch) {
       _settings = Utils.deepMerge(_settings || DEFAULT_SETTINGS, patch);
@@ -243,18 +208,12 @@ const AppState = (() => {
 
     onMeta(key, fn) { (_msubs[key] = _msubs[key] || []).push(fn); },
 
-    // ── Subscription API ─────────────────────────────────────────────────
     on(store, fn) {
       (_subs[store] = _subs[store] || []).push(fn);
-      // Return unsubscribe function (for ai.js session cleanup)
-      return () => {
-        _subs[store] = (_subs[store] || []).filter(f => f !== fn);
-      };
+      return () => { _subs[store] = (_subs[store] || []).filter(f => f !== fn); };
     },
 
-    off(store, fn) {
-      _subs[store] = (_subs[store] || []).filter(f => f !== fn);
-    },
+    off(store, fn) { _subs[store] = (_subs[store] || []).filter(f => f !== fn); },
 
     emit(store) { _emit(store); }
   };
