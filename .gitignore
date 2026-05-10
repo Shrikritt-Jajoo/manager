@@ -1,0 +1,14 @@
+# Rust build artefacts
+/target/
+Cargo.lock
+
+# macOS
+.DS_Store
+
+# Live data and snapshots — never commit user data
+/data/*.json
+/versions/*/
+
+# Keep the placeholder files so the directories exist in the repo
+!/data/.gitkeep
+!/versions/.gitkeep
