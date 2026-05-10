@@ -1,7 +1,7 @@
 'use strict';
+// Phase 6: removed duplicate Starfield.init() — db.js DOMContentLoaded bootstrap handles it.
 (async () => {
   await AppState.init();
-  Starfield.init();
   Shell.bindNavButtons();
   Stats.init();
 })();
@@ -19,7 +19,7 @@ const Stats = {
   },
 
   _renderToday() {
-    const today   = Utils.todayKey();
+    const today    = Utils.todayKey();
     const sessions = AppState.get('focusSessions').filter(s => s.startedAt.startsWith(today));
     const focusMins = sessions.reduce((a, s) => a + (s.actualMinutes || 0), 0);
     const completed = AppState.get('tasks').filter(t => t.isCompleted && t.completedAt && t.completedAt.startsWith(today)).length;
@@ -48,7 +48,7 @@ const Stats = {
     }
 
     dotsEl.innerHTML = days.map(d => {
-      const val   = streak.dailyLog ? (streak.dailyLog[d] || 0) : 0;
+      const val    = streak.dailyLog ? (streak.dailyLog[d] || 0) : 0;
       const filled = val >= 60;
       const dayName = new Date(d + 'T12:00').toLocaleDateString(undefined, { weekday: 'short' });
       return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -77,8 +77,8 @@ const Stats = {
     }
 
     const sessions = AppState.get('focusSessions');
-    const values = days.map(d => sessions.filter(s => s.startedAt.startsWith(d)).reduce((a,s) => a + (s.actualMinutes||0), 0));
-    const maxVal = Math.max(...values, 1);
+    const values   = days.map(d => sessions.filter(s => s.startedAt.startsWith(d)).reduce((a,s) => a + (s.actualMinutes||0), 0));
+    const maxVal   = Math.max(...values, 1);
 
     ctx.clearRect(0, 0, W, H);
 
@@ -90,7 +90,6 @@ const Stats = {
 
     const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#BFAE99';
 
-    // grid lines
     for (let g = 0; g <= 4; g++) {
       const y = padT + chartH - (g / 4) * chartH;
       ctx.beginPath();
@@ -110,15 +109,14 @@ const Stats = {
       ctx.fillRect(x, y, barW, barH);
       ctx.globalAlpha = 1;
 
-      // label
       ctx.fillStyle = 'rgba(245,247,251,.45)';
-      ctx.font = '10px Inter, system-ui, sans-serif';
+      ctx.font = '10px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(labels[i], padL + gap * i + gap / 2, H - 8);
 
       if (v > 0) {
         ctx.fillStyle = accent;
-        ctx.font = '9px Inter, system-ui, sans-serif';
+        ctx.font = '9px system-ui, sans-serif';
         ctx.fillText(v + 'm', padL + gap * i + gap / 2, y - 4);
       }
     });
@@ -141,7 +139,6 @@ const Stats = {
     const cx = W/2, cy = H/2, r = 48, lw = 7;
     const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#BFAE99';
 
-    // track
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(245,247,251,.09)';

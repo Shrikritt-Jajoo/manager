@@ -1,7 +1,7 @@
 'use strict';
+// Phase 5: removed duplicate Starfield.init() — db.js DOMContentLoaded bootstrap handles it.
 (async () => {
   await AppState.init();
-  Starfield.init();
   Shell.bindNavButtons();
   FocusController.init();
 })();
@@ -166,10 +166,8 @@ const FocusController = {
       notes
     });
 
-    // update streak
     await this._updateStreak(newProg - oldProg, task.estimatedMinutes || 30);
 
-    // auto-advance step
     if (AppState.getSettings().autoStep) {
       const subId    = AppState.getMeta('currentSubtaskId');
       const subtasks = AppState.get('subtasks').filter(s => s.taskId === taskId && !s.isCompleted);
@@ -197,7 +195,6 @@ const FocusController = {
     streak.dailyLog = streak.dailyLog || {};
     streak.dailyLog[key] = (streak.dailyLog[key] || 0) + delta;
 
-    // recalculate streak: eligible if dailyLog[date] >= 60 (progress points)
     const dates = Object.keys(streak.dailyLog).sort().reverse();
     let count = 0;
     let prev  = null;

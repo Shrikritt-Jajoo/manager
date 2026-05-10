@@ -1,7 +1,8 @@
 'use strict';
+// Phase 4: removed duplicate Starfield.init() — db.js DOMContentLoaded bootstrap handles it.
+// Phase 4: fixed AppState._emit('scheduleBlocks') -> AppState.emit('scheduleBlocks') (private->public).
 (async () => {
   await AppState.init();
-  Starfield.init();
   Shell.bindNavButtons();
   Planner.init();
 })();
@@ -27,7 +28,7 @@ const Planner = {
     this._renderDetail();
   },
 
-  // ── Backlog ──────────────────────────────────────────────────────────────
+  // ── Backlog ────────────────────────────────────────────────────────────────────
   _renderBacklog() {
     const el = document.getElementById('backlogList');
     if (!el) return;
@@ -87,7 +88,7 @@ const Planner = {
     window.location.href = `focus.html?taskId=${encodeURIComponent(taskId)}`;
   },
 
-  // ── Goals ────────────────────────────────────────────────────────────────
+  // ── Goals ──────────────────────────────────────────────────────────────────────
   _renderGoals() {
     const el = document.getElementById('goalsList');
     if (!el) return;
@@ -147,7 +148,7 @@ const Planner = {
     }
   },
 
-  // ── Slots ────────────────────────────────────────────────────────────────
+  // ── Slots ──────────────────────────────────────────────────────────────────────
   _renderSlots() {
     const el = document.getElementById('slotsList');
     if (!el) return;
@@ -163,7 +164,7 @@ const Planner = {
     });
   },
 
-  // ── Schedule ─────────────────────────────────────────────────────────────
+  // ── Schedule ───────────────────────────────────────────────────────────────────
   _renderSchedule() {
     const el = document.getElementById('scheduleList');
     if (!el) return;
@@ -180,7 +181,7 @@ const Planner = {
       </div>`).join('');
   },
 
-  // ── Detail panel ──────────────────────────────────────────────────────────
+  // ── Detail panel ─────────────────────────────────────────────────────────────
   _renderDetail() {
     const empty   = document.getElementById('detailEmpty');
     const content = document.getElementById('detailContent');
@@ -194,7 +195,7 @@ const Planner = {
     if (empty)   empty.style.display   = 'none';
     if (content) content.style.display = '';
 
-    const subs = AppState.get('subtasks').filter(s => s.taskId === task.id);
+    const subs   = AppState.get('subtasks').filter(s => s.taskId === task.id);
     const hasSubs = subs.length > 0;
 
     content.innerHTML = `
@@ -354,7 +355,7 @@ const Planner = {
     });
   },
 
-  // ── Forms ────────────────────────────────────────────────────────────────
+  // ── Forms ──────────────────────────────────────────────────────────────────────
   _bindForms() {
     const qf = document.getElementById('quickForm');
     if (qf) qf.onsubmit = async (e) => {
@@ -402,9 +403,10 @@ const Planner = {
       const schedule = await Scheduler.buildSchedule();
       await DB.clear('scheduleBlocks');
       for (const b of schedule) await DB.put('scheduleBlocks', b);
+      // Phase 4 fix: was AppState._emit (private) — must use AppState.emit (public)
       AppState.get('scheduleBlocks').length = 0;
       schedule.forEach(b => AppState.get('scheduleBlocks').push(b));
-      AppState._emit('scheduleBlocks');
+      AppState.emit('scheduleBlocks');
       Shell.toast(`Schedule ready — ${schedule.length} blocks`);
     };
 
