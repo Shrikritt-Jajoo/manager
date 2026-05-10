@@ -103,6 +103,52 @@
         <input type="color" class="color-swatch" data-glow-col="5" value="#82ffaa" aria-label="Glow colour 6">
       </div>
     </div>
+
+    <!-- ── Glass Appearance ── -->
+    <div class="settings-section-title" style="margin-top:var(--sp4)">Glass Appearance</div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Background colour</div>
+        <div class="setting-desc">Canvas + body fill behind the stars</div>
+      </div>
+      <input type="color" class="color-swatch" id="bgColor" value="#000000" aria-label="Background colour">
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Glass tint colour</div>
+        <div class="setting-desc">Warm tone applied behind blurred surfaces</div>
+      </div>
+      <input type="color" class="color-swatch" id="glassTintColor" value="#BFAE99" aria-label="Glass tint colour">
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Glass tint opacity</div>
+        <div class="setting-desc">How strongly the tint shows through (0–30%)</div>
+      </div>
+      <div class="range-row">
+        <input type="range" class="glass-range" id="glassTintOpacity"
+               min="0" max="30" step="1" value="6"
+               aria-label="Glass tint opacity percentage">
+        <span class="range-val" id="glassTintOpacityVal">6%</span>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Glass blur intensity</div>
+        <div class="setting-desc">Backdrop blur radius on all glass surfaces (px)</div>
+      </div>
+      <div class="range-row">
+        <input type="range" class="glass-range" id="glassBlur"
+               min="4" max="40" step="1" value="18"
+               aria-label="Glass blur intensity in pixels">
+        <span class="range-val" id="glassBlurVal">18px</span>
+      </div>
+    </div>
+
   </section>
 
   <!-- FOCUS TIMER -->
@@ -135,7 +181,6 @@
       <button class="abtn sm" id="testAiBtn">Test connection</button>
       <span id="aiTestResult" style="font-size:12px;color:var(--text-muted)"></span>
     </div>
-    <!-- AI jobs panel placeholder — populated by Phase G -->
     <div id="aiJobsPanel"></div>
   </section>
 

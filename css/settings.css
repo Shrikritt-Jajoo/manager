@@ -1,5 +1,5 @@
 /* ── Page shell ── */
-body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
+body.settings-page { overflow: hidden; height: 100%; }
 
 .settings-nav {
   position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
@@ -13,7 +13,6 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   transform: translateX(-50%);
   display: flex; gap: 2px;
   z-index: 9;
-  /* borderless glass tab bar */
   background: rgba(191, 174, 153, 0.07);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
@@ -32,41 +31,31 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
 .stab:hover  { color: var(--text-muted); background: rgba(191,174,153,.08); }
 .stab.active { background: var(--accent); color: var(--accent-text); }
 
-/* ── Layout — borderless, top+bottom edge fade ── */
+/* ── Scrollable layout container ──
+   Sits below the fixed nav (22px) + fixed tab bar (~108px total).
+   overflow-y:auto here lets content scroll inside while body stays fixed.
+── */
 .settings-layout {
-  position: relative; z-index: 7;
-  padding: 118px var(--sp8) 80px;
-  max-width: 600px; margin: 0 auto;
-  /* very faint tint so text reads against the starfield */
-  background: rgba(191, 174, 153, 0.04);
-  backdrop-filter: blur(14px) saturate(1.4) brightness(0.90);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4) brightness(0.90);
-  border: none;
-  /* top and bottom dissolve, left/right dissolve slightly */
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%, black 6%, black 94%, transparent 100%
-  ),
-  linear-gradient(
-    to right,
-    transparent 0%, black 3%, black 97%, transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%, black 6%, black 94%, transparent 100%
-  ),
-  linear-gradient(
-    to right,
-    transparent 0%, black 3%, black 97%, transparent 100%
-  );
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
+  position: fixed;
+  top: 118px; left: 0; right: 0; bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 7;
+  padding: var(--sp8) var(--sp8) 80px;
+  /* centre content */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.settings-layout > * {
+  width: 100%;
+  max-width: 580px;
 }
 
 /* ── Sections ── */
 .settings-section {
   display: flex; flex-direction: column; gap: var(--sp5);
-  padding-bottom: var(--sp6);
+  padding-bottom: var(--sp8);
 }
 .settings-section.hidden { display: none; }
 
@@ -83,7 +72,7 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
 .setting-desc  { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
 
 /* ── Segmented controls ── */
-.seg-ctrl { display: flex; gap: 4px; }
+.seg-ctrl { display: flex; gap: 4px; flex-wrap: wrap; }
 .seg-btn {
   padding: 6px 12px; background: transparent; border: none;
   font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
@@ -113,6 +102,33 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
 .settings-input:focus            { border-bottom-color: var(--accent); outline: none; }
 .settings-input[type=password]   { letter-spacing: .22em; }
 .settings-input[type=number]     { width: 80px; }
+
+/* ── Range slider ── */
+.glass-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 160px; height: 3px;
+  background: rgba(245,247,251,.16);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.glass-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.range-row {
+  display: flex; align-items: center; gap: var(--sp4);
+}
+.range-val {
+  font-size: 12px; color: var(--accent);
+  min-width: 32px; text-align: right;
+  letter-spacing: .06em;
+}
 
 /* ── Select ── */
 .settings-select {

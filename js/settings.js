@@ -1,6 +1,7 @@
 'use strict';
 // Phase 7: removed duplicate Starfield.init(); added tab switching logic.
 // Phase G: built out #aiJobsPanel — job cards with enable toggle + run-now + output UI.
+// Glass patch: added glass appearance controls (blur, tint opacity, tint colour, bg colour).
 (async () => {
   await AppState.init();
   Shell.bindNavButtons();
@@ -15,6 +16,8 @@ const SettingsPage = {
     this._bindTabs();
     this._bindAll();
     this._buildAiJobsPanel();
+    // Apply persisted glass settings immediately on load
+    this.applyGlassSettings();
   },
 
   // ---- Tab switching ---------------------------------------------------
@@ -34,12 +37,69 @@ const SettingsPage = {
     document.querySelectorAll('[data-tab-panel]').forEach(panel => {
       panel.classList.toggle('hidden', panel.dataset.tabPanel !== name);
     });
+    // Scroll content back to top when switching tabs
+    const layout = document.getElementById('settingsLayout');
+    if (layout) layout.scrollTop = 0;
+  },
+
+  // ---- Apply glass settings live via injected <style> -----------------
+  // Overrides CSS variables and backdrop-filter values so all glass
+  // surfaces on every page pick up the changes after a reload.
+  // On the settings page itself we inject a live <style> tag so the
+  // preview is immediate.
+  applyGlassSettings() {
+    const s      = AppState.getSettings();
+    const blur   = s.glassBlur        != null ? s.glassBlur        : 18;
+    const opPct  = s.glassTintOpacity != null ? s.glassTintOpacity : 6;
+    const tint   = s.glassTintColor   || '#BFAE99';
+    const bg     = s.bgColor          || '#000000';
+
+    // Parse hex tint to r,g,b
+    const rgb = Utils.hexToRgb(tint) || [191, 174, 153];
+    const op      = opPct / 100;
+    const opModal = Math.min(opPct * 1.7, 30) / 100;
+    const opPanel = Math.max(opPct * 0.85, 0) / 100;
+    const blurHeavy = Math.round(blur * 1.78);
+    const blurLight = Math.round(blur * 0.78);
+
+    let tag = document.getElementById('_glassOverride');
+    if (!tag) {
+      tag = document.createElement('style');
+      tag.id = '_glassOverride';
+      document.head.appendChild(tag);
+    }
+    tag.textContent = `
+      html, body, #starCanvas { background: ${bg} !important; }
+      .glass {
+        background: rgba(${rgb},${op.toFixed(3)}) !important;
+        backdrop-filter: blur(${blur}px) saturate(1.5) brightness(0.88) !important;
+        -webkit-backdrop-filter: blur(${blur}px) saturate(1.5) brightness(0.88) !important;
+      }
+      .glass-modal {
+        background: rgba(${rgb},${opModal.toFixed(3)}) !important;
+        backdrop-filter: blur(${blurHeavy}px) saturate(1.8) brightness(0.78) !important;
+        -webkit-backdrop-filter: blur(${blurHeavy}px) saturate(1.8) brightness(0.78) !important;
+      }
+      .glass-panel {
+        background: rgba(${rgb},${opPanel.toFixed(3)}) !important;
+        backdrop-filter: blur(${blur}px) saturate(1.5) brightness(0.88) !important;
+        -webkit-backdrop-filter: blur(${blur}px) saturate(1.5) brightness(0.88) !important;
+      }
+      .panel, .br-block, .strip, .metric-card, .session-modal,
+      .onb-box, .confirm-box {
+        background: rgba(${rgb},${op.toFixed(3)}) !important;
+        backdrop-filter: blur(${blur}px) saturate(1.5) brightness(0.88) !important;
+        -webkit-backdrop-filter: blur(${blur}px) saturate(1.5) brightness(0.88) !important;
+      }
+      .onb-box, .confirm-box, .session-modal {
+        background: rgba(${rgb},${opModal.toFixed(3)}) !important;
+        backdrop-filter: blur(${blurHeavy}px) saturate(1.8) brightness(0.78) !important;
+        -webkit-backdrop-filter: blur(${blurHeavy}px) saturate(1.8) brightness(0.78) !important;
+      }
+    `;
   },
 
   // ---- AI Jobs Panel ---------------------------------------------------
-  // Renders one card per registered job inside #aiJobsPanel.
-  // Each card shows: label, trigger badge, enabled toggle, Run now button,
-  // and an inline output area that fills after a run.
   _buildAiJobsPanel() {
     const panel = document.getElementById('aiJobsPanel');
     if (!panel) return;
@@ -55,7 +115,6 @@ const SettingsPage = {
 
     panel.innerHTML = '';
 
-    // Section divider
     const title = document.createElement('div');
     title.style.cssText = 'font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-top:var(--sp6);margin-bottom:var(--sp3)';
     title.textContent = 'Registered Jobs';
@@ -64,19 +123,18 @@ const SettingsPage = {
     jobs.forEach(job => {
       const isEnabled = !disabled.has(job.id);
       const card = document.createElement('div');
-      card.style.cssText = 'border:1px solid rgba(245,247,251,.08);border-radius:8px;padding:var(--sp4);margin-bottom:var(--sp4)';
+      card.style.cssText = 'border-bottom:1px solid rgba(245,247,251,.06);padding:var(--sp4) 0;margin-bottom:var(--sp3)';
       card.dataset.jobCard = job.id;
 
-      // Header row: label + trigger badge + toggle + run button
       const header = document.createElement('div');
       header.style.cssText = 'display:flex;align-items:center;gap:var(--sp3);flex-wrap:wrap';
 
       const labelEl = document.createElement('div');
-      labelEl.style.cssText = 'font-size:13px;color:var(--text-base);flex:1;font-weight:500';
+      labelEl.style.cssText = 'font-size:13px;color:var(--text);flex:1;font-weight:500';
       labelEl.textContent = job.label || job.id;
 
       const triggerBadge = document.createElement('span');
-      triggerBadge.style.cssText = 'font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:rgba(191,174,153,.12);padding:2px 7px;border-radius:4px';
+      triggerBadge.style.cssText = 'font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:rgba(191,174,153,.12);padding:2px 7px';
       triggerBadge.textContent = job.trigger || 'manual';
 
       const toggleBtn = document.createElement('button');
@@ -105,7 +163,6 @@ const SettingsPage = {
       header.appendChild(toggleBtn);
       header.appendChild(runBtn);
 
-      // Prompt preview (collapsed)
       const promptPre = document.createElement('div');
       promptPre.style.cssText = 'font-size:11px;color:var(--text-faint);margin-top:var(--sp3);white-space:pre-wrap;max-height:60px;overflow:hidden;cursor:pointer;border-top:1px solid rgba(245,247,251,.05);padding-top:var(--sp3)';
       promptPre.title = 'Click to expand system prompt';
@@ -118,7 +175,6 @@ const SettingsPage = {
         else promptPre.textContent = (job.systemPrompt || '').slice(0, 120) + '…';
       };
 
-      // Output area (hidden until run)
       const outputArea = document.createElement('div');
       outputArea.dataset.jobOutput = job.id;
       outputArea.style.display = 'none';
@@ -134,13 +190,10 @@ const SettingsPage = {
   async _runJobFromSettings(job, card) {
     const outputArea = card.querySelector(`[data-job-output="${job.id}"]`);
     if (!outputArea) return;
-
     if (!AI.isOnline()) { Shell.toast('No internet — AI unavailable offline'); return; }
     if (!AI._getKey())  { Shell.toast('Add Gemini API key above first'); return; }
-
     outputArea.style.display = '';
     outputArea.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Running…</div>';
-
     try {
       const result = await AI.runJob(job.id);
       this._renderJobOutput(job, result, outputArea);
@@ -153,127 +206,71 @@ const SettingsPage = {
   _renderJobOutput(job, result, outputArea) {
     outputArea.innerHTML = '';
     const type = job.outputSchema && job.outputSchema.type;
-
-    // ---- email output ----
     if (type === 'email') {
       const subjectEl = document.createElement('div');
       subjectEl.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:var(--sp2)';
       subjectEl.textContent = 'Subject: ' + (result.subject || '(none)');
-
       const bodyEl = document.createElement('div');
-      bodyEl.style.cssText = 'font-size:12px;color:var(--text-faint);white-space:pre-wrap;max-height:200px;overflow-y:auto;border:1px solid rgba(245,247,251,.08);padding:var(--sp3);border-radius:6px';
+      bodyEl.style.cssText = 'font-size:12px;color:var(--text-faint);white-space:pre-wrap;max-height:200px;overflow-y:auto;padding:var(--sp3)';
       bodyEl.textContent = result.body || '';
-
       const actions = document.createElement('div');
       actions.style.cssText = 'display:flex;gap:var(--sp3);margin-top:var(--sp3)';
-
-      const sendBtn = document.createElement('button');
-      sendBtn.className = 'abtn sm';
-      sendBtn.textContent = 'Send via Gmail';
+      const sendBtn = document.createElement('button'); sendBtn.className='abtn sm'; sendBtn.textContent='Send via Gmail';
       sendBtn.onclick = async () => {
-        try {
-          await Gmail.sendSchedule(AppState.get('scheduleBlocks'), result.subject, result.body);
-          Shell.toast('Email sent!');
-          outputArea.style.display = 'none';
-        } catch(e) { Shell.toast('Send failed: ' + e.message); }
+        try { await Gmail.sendSchedule(AppState.get('scheduleBlocks'), result.subject, result.body); Shell.toast('Email sent!'); outputArea.style.display='none'; }
+        catch(e) { Shell.toast('Send failed: ' + e.message); }
       };
-
-      const discardBtn = document.createElement('button');
-      discardBtn.className = 'abtn sm danger';
-      discardBtn.textContent = 'Discard';
-      discardBtn.onclick = () => { outputArea.style.display = 'none'; outputArea.innerHTML = ''; };
-
-      actions.appendChild(sendBtn);
-      actions.appendChild(discardBtn);
-      outputArea.appendChild(subjectEl);
-      outputArea.appendChild(bodyEl);
-      outputArea.appendChild(actions);
+      const discardBtn = document.createElement('button'); discardBtn.className='abtn sm danger'; discardBtn.textContent='Discard';
+      discardBtn.onclick = () => { outputArea.style.display='none'; outputArea.innerHTML=''; };
+      actions.appendChild(sendBtn); actions.appendChild(discardBtn);
+      outputArea.appendChild(subjectEl); outputArea.appendChild(bodyEl); outputArea.appendChild(actions);
       return;
     }
-
-    // ---- weekly-review output ----
     if (type === 'weekly-review') {
       const mdEl = document.createElement('div');
-      mdEl.style.cssText = 'font-size:12px;color:var(--text-muted);white-space:pre-wrap;max-height:300px;overflow-y:auto;border:1px solid rgba(245,247,251,.08);padding:var(--sp3);border-radius:6px';
+      mdEl.style.cssText = 'font-size:12px;color:var(--text-muted);white-space:pre-wrap;max-height:300px;overflow-y:auto;padding:var(--sp3)';
       mdEl.textContent = result.markdown || '';
-
-      const actions = document.createElement('div');
-      actions.style.cssText = 'display:flex;gap:var(--sp3);margin-top:var(--sp3)';
-
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'abtn sm';
-      copyBtn.textContent = 'Copy';
-      copyBtn.onclick = () => navigator.clipboard.writeText(result.markdown || '').then(() => Shell.toast('Copied!')).catch(() => Shell.toast('Copy failed'));
-
-      const discardBtn = document.createElement('button');
-      discardBtn.className = 'abtn sm danger';
-      discardBtn.textContent = 'Discard';
-      discardBtn.onclick = () => { outputArea.style.display = 'none'; outputArea.innerHTML = ''; };
-
-      actions.appendChild(copyBtn);
-      actions.appendChild(discardBtn);
-      outputArea.appendChild(mdEl);
-      outputArea.appendChild(actions);
+      const actions = document.createElement('div'); actions.style.cssText='display:flex;gap:var(--sp3);margin-top:var(--sp3)';
+      const copyBtn = document.createElement('button'); copyBtn.className='abtn sm'; copyBtn.textContent='Copy';
+      copyBtn.onclick = () => navigator.clipboard.writeText(result.markdown||'').then(()=>Shell.toast('Copied!')).catch(()=>Shell.toast('Copy failed'));
+      const discardBtn = document.createElement('button'); discardBtn.className='abtn sm danger'; discardBtn.textContent='Discard';
+      discardBtn.onclick = () => { outputArea.style.display='none'; outputArea.innerHTML=''; };
+      actions.appendChild(copyBtn); actions.appendChild(discardBtn);
+      outputArea.appendChild(mdEl); outputArea.appendChild(actions);
       return;
     }
-
-    // ---- data output (task-critique, backlog-cleanup, goal-decomposition) ----
     if (!result || !result.items || !result.items.length) {
       outputArea.innerHTML = '<div style="font-size:12px;color:var(--text-faint)">No suggestions returned.</div>';
       return;
     }
-
     const accepted = new Set();
     const summary = document.createElement('div');
     summary.style.cssText = 'font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:var(--sp3)';
     summary.textContent = result.summary || 'AI suggestions';
-
     const listEl = document.createElement('div');
     result.items.forEach((item, i) => {
       accepted.add(i);
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;align-items:flex-start;gap:var(--sp3);padding:var(--sp2) 0;border-bottom:1px solid rgba(245,247,251,.04)';
-
-      const chk = document.createElement('input');
-      chk.type = 'checkbox'; chk.checked = true; chk.style.marginTop = '3px';
+      const chk = document.createElement('input'); chk.type='checkbox'; chk.checked=true; chk.style.marginTop='3px';
       chk.onchange = () => chk.checked ? accepted.add(i) : accepted.delete(i);
-
-      const label = document.createElement('div');
-      label.style.cssText = 'font-size:12px;color:var(--text-muted);flex:1';
-      const actionTag = `<span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-right:5px">${Utils.escapeHtml(item.action || '')}</span>`;
-      const titleStr  = item.payload && item.payload.title
-        ? Utils.escapeHtml(item.payload.title)
-        : (item.id || JSON.stringify(item.payload || {}).slice(0, 80));
+      const label = document.createElement('div'); label.style.cssText='font-size:12px;color:var(--text-muted);flex:1';
+      const actionTag = `<span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-right:5px">${Utils.escapeHtml(item.action||'')}</span>`;
+      const titleStr = item.payload && item.payload.title ? Utils.escapeHtml(item.payload.title) : (item.id || JSON.stringify(item.payload||{}).slice(0,80));
       label.innerHTML = actionTag + titleStr;
-
-      row.appendChild(chk);
-      row.appendChild(label);
-      listEl.appendChild(row);
+      row.appendChild(chk); row.appendChild(label); listEl.appendChild(row);
     });
-
-    const actions = document.createElement('div');
-    actions.style.cssText = 'display:flex;gap:var(--sp3);margin-top:var(--sp4)';
-
-    const applyBtn = document.createElement('button');
-    applyBtn.className = 'abtn sm';
-    applyBtn.textContent = 'Apply selected';
+    const actions = document.createElement('div'); actions.style.cssText='display:flex;gap:var(--sp3);margin-top:var(--sp4)';
+    const applyBtn = document.createElement('button'); applyBtn.className='abtn sm'; applyBtn.textContent='Apply selected';
     applyBtn.onclick = async () => {
       const count = await AI.applyOutputs(job, result, accepted);
-      Shell.toast(`Applied ${count} change${count !== 1 ? 's' : ''}`);
-      outputArea.style.display = 'none';
-      outputArea.innerHTML = '';
+      Shell.toast(`Applied ${count} change${count!==1?'s':''}`);
+      outputArea.style.display='none'; outputArea.innerHTML='';
     };
-
-    const discardBtn = document.createElement('button');
-    discardBtn.className = 'abtn sm danger';
-    discardBtn.textContent = 'Discard all';
-    discardBtn.onclick = () => { outputArea.style.display = 'none'; outputArea.innerHTML = ''; };
-
-    actions.appendChild(applyBtn);
-    actions.appendChild(discardBtn);
-    outputArea.appendChild(summary);
-    outputArea.appendChild(listEl);
-    outputArea.appendChild(actions);
+    const discardBtn = document.createElement('button'); discardBtn.className='abtn sm danger'; discardBtn.textContent='Discard all';
+    discardBtn.onclick = () => { outputArea.style.display='none'; outputArea.innerHTML=''; };
+    actions.appendChild(applyBtn); actions.appendChild(discardBtn);
+    outputArea.appendChild(summary); outputArea.appendChild(listEl); outputArea.appendChild(actions);
   },
 
   // ---- Load persisted values into controls ----------------------------
@@ -288,6 +285,29 @@ const SettingsPage = {
 
     const ac = document.getElementById('accentColor');
     if (ac) ac.value = s.accentColor || '#BFAE99';
+
+    // Glass controls
+    const bgCol = document.getElementById('bgColor');
+    if (bgCol) bgCol.value = s.bgColor || '#000000';
+
+    const tintCol = document.getElementById('glassTintColor');
+    if (tintCol) tintCol.value = s.glassTintColor || '#BFAE99';
+
+    const tintOp = document.getElementById('glassTintOpacity');
+    const tintOpVal = document.getElementById('glassTintOpacityVal');
+    if (tintOp) {
+      const v = s.glassTintOpacity != null ? s.glassTintOpacity : 6;
+      tintOp.value = v;
+      if (tintOpVal) tintOpVal.textContent = v + '%';
+    }
+
+    const blurEl = document.getElementById('glassBlur');
+    const blurVal = document.getElementById('glassBlurVal');
+    if (blurEl) {
+      const v = s.glassBlur != null ? s.glassBlur : 18;
+      blurEl.value = v;
+      if (blurVal) blurVal.textContent = v + 'px';
+    }
 
     (s.starBodyColors || []).forEach((c, i) => {
       const el = document.querySelector(`[data-star-col="${i}"]`);
@@ -350,7 +370,43 @@ const SettingsPage = {
     const ac = document.getElementById('accentColor');
     if (ac) ac.oninput = async () => await AppState.saveSettings({ accentColor: ac.value });
 
-    // Star body colours
+    // ── Glass controls ──────────────────────────────────────────────
+
+    // Background colour
+    const bgCol = document.getElementById('bgColor');
+    if (bgCol) bgCol.oninput = async () => {
+      await AppState.saveSettings({ bgColor: bgCol.value });
+      this.applyGlassSettings();
+    };
+
+    // Glass tint colour
+    const tintCol = document.getElementById('glassTintColor');
+    if (tintCol) tintCol.oninput = async () => {
+      await AppState.saveSettings({ glassTintColor: tintCol.value });
+      this.applyGlassSettings();
+    };
+
+    // Glass tint opacity
+    const tintOp = document.getElementById('glassTintOpacity');
+    const tintOpVal = document.getElementById('glassTintOpacityVal');
+    if (tintOp) tintOp.oninput = async () => {
+      const v = parseInt(tintOp.value);
+      if (tintOpVal) tintOpVal.textContent = v + '%';
+      await AppState.saveSettings({ glassTintOpacity: v });
+      this.applyGlassSettings();
+    };
+
+    // Glass blur intensity
+    const blurEl = document.getElementById('glassBlur');
+    const blurVal = document.getElementById('glassBlurVal');
+    if (blurEl) blurEl.oninput = async () => {
+      const v = parseInt(blurEl.value);
+      if (blurVal) blurVal.textContent = v + 'px';
+      await AppState.saveSettings({ glassBlur: v });
+      this.applyGlassSettings();
+    };
+
+    // ── Star colours ────────────────────────────────────────────────
     document.querySelectorAll('[data-star-col]').forEach(inp => {
       inp.oninput = async () => {
         const cols = Array.from(document.querySelectorAll('[data-star-col]')).map(el => el.value);
@@ -359,7 +415,6 @@ const SettingsPage = {
       };
     });
 
-    // Glow colours
     document.querySelectorAll('[data-glow-col]').forEach(inp => {
       inp.oninput = async () => {
         const cols = Array.from(document.querySelectorAll('[data-glow-col]')).map(el => el.value);
@@ -382,22 +437,18 @@ const SettingsPage = {
       await AppState.saveSettings({ autoStep: next });
     };
 
-    // Gemini key — save on blur
+    // Gemini key
     const gk = document.getElementById('geminiKey');
     if (gk) gk.onblur = async () =>
       await AppState.saveSettings({ geminiKey: gk.value.trim() });
 
-    // Test AI connection
+    // Test AI
     const testBtn = document.getElementById('testAiBtn');
     const testRes = document.getElementById('aiTestResult');
     if (testBtn) testBtn.onclick = async () => {
       if (testRes) testRes.textContent = 'Testing…';
-      try {
-        await AI.ping();
-        if (testRes) testRes.textContent = '✓ Connected';
-      } catch(e) {
-        if (testRes) testRes.textContent = '✗ ' + e.message;
-      }
+      try { await AI.ping(); if (testRes) testRes.textContent = '✓ Connected'; }
+      catch(e) { if (testRes) testRes.textContent = '✗ ' + e.message; }
     };
 
     // Gmail connect
@@ -470,7 +521,7 @@ const SettingsPage = {
       }
     };
 
-    // Clear completed tasks
+    // Clear completed
     const ccBtn = document.getElementById('clearCompletedBtn');
     if (ccBtn) ccBtn.onclick = async () => {
       if (!await Shell.confirm('Delete all completed tasks?')) return;
