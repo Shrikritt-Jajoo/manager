@@ -19,7 +19,7 @@ const Shell = {
       const ov = document.createElement('div');
       ov.className = 'confirm-overlay';
       ov.innerHTML = `
-        <div class="confirm-box glass" role="dialog" aria-modal="true">
+        <div class="confirm-box" role="dialog" aria-modal="true">
           <div class="confirm-msg">${Utils.escapeHtml(msg)}</div>
           <div class="confirm-actions">
             <button class="abtn sm" id="cfNo">Cancel</button>
@@ -38,10 +38,49 @@ const Shell = {
     document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.addEventListener('click', () => this.navigate(btn.dataset.nav));
     });
+  },
+
+  // ── Blur layer injection ──────────────────────────────────────────────
+  // Injects the correct set of ambient blur divs into document.body.
+  // Home page: 8 full-width horizontal bands (top + bottom).
+  // Inner pages: 4 full-height column bands (left+right fade).
+  // Called once at DOMContentLoaded or when shell is initialised.
+  injectBlurLayers() {
+    const isHome = document.body.classList.contains('home-page') ||
+                   (!document.body.className ||
+                    document.body.className.trim() === '' ||
+                    document.body.className === 'undefined');
+
+    // Determine page type more robustly
+    const path = window.location.pathname;
+    const onHome = path.endsWith('index.html') || path === '/' || path.endsWith('/');
+
+    const layers = onHome
+      ? ['blur-top-1','blur-top-2','blur-top-3','blur-top-4',
+         'blur-bot-1','blur-bot-2','blur-bot-3','blur-bot-4']
+      : ['blur-col-1','blur-col-2','blur-col-3','blur-col-4'];
+
+    layers.forEach(cls => {
+      if (document.querySelector('.' + cls)) return; // already injected
+      const d = document.createElement('div');
+      d.className = cls;
+      d.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(d);
+    });
+
+    // Slight delay so first paint lands before opacity transitions in
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.body.classList.add('blur-ready');
+      });
+    });
   }
 };
 
 const AppShell = Shell;
+
+// Inject blur layers as early as possible
+document.addEventListener('DOMContentLoaded', () => Shell.injectBlurLayers());
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
 const Onboarding = {
@@ -90,7 +129,7 @@ const Onboarding = {
     const d = this._dots();
     switch (this._step) {
       case 0: return `
-        <div class="onb-box glass">
+        <div class="onb-box" role="dialog" aria-modal="true">
           <div class="onb-title">ChronoFlow</div>
           <div class="onb-sub">Your focus OS. It hides when you work.<br>It surfaces when you need it.<br>Let's set up your workspace.</div>
           <div class="onb-actions">
@@ -100,7 +139,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 1: return `
-        <div class="onb-box glass">
+        <div class="onb-box" role="dialog" aria-modal="true">
           <div class="onb-title">What are you working on?</div>
           <div class="onb-sub">Add your first goal. ChronoFlow can use AI to break it into tasks for you.</div>
           <div class="onb-form">
@@ -114,7 +153,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 2: return `
-        <div class="onb-box glass">
+        <div class="onb-box" role="dialog" aria-modal="true">
           <div class="onb-title">When do you work?</div>
           <div class="onb-sub">Add your available time slots. ChronoFlow schedules tasks inside these windows.</div>
           <div class="onb-form">
@@ -138,7 +177,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 3: return `
-        <div class="onb-box glass">
+        <div class="onb-box" role="dialog" aria-modal="true">
           <div class="onb-title">How long is your default focus session?</div>
           <div class="onb-sub">You can change this anytime in Settings.</div>
           <div class="onb-timer-opts">
@@ -152,7 +191,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 4: return `
-        <div class="onb-box glass">
+        <div class="onb-box" role="dialog" aria-modal="true">
           <div class="onb-title">Connect Gmail</div>
           <div class="onb-sub">ChronoFlow can email your daily schedule each morning.<br><span style="font-size:11px;opacity:.5">Requires running via http://localhost — see README.</span></div>
           <div class="onb-actions">
@@ -162,7 +201,7 @@ const Onboarding = {
           <div class="onb-dots">${d}</div>
         </div>`;
       case 5: return `
-        <div class="onb-box glass">
+        <div class="onb-box" role="dialog" aria-modal="true">
           <div class="onb-title">You're ready.</div>
           <div class="onb-sub">Move your mouse to reveal the interface.<br>Start by adding your first task in the Planner.</div>
           <div class="onb-actions">
@@ -191,7 +230,6 @@ const Onboarding = {
   },
 
   _bindStep(ov) {
-    // Global skip-all button (step 0 only)
     const skipAll = ov.querySelector('#onbSkipAll');
     if (skipAll) skipAll.onclick = async () => { await this._finish(); };
 
@@ -284,12 +322,9 @@ const Onboarding = {
         description: this._goalDesc, createdAt: new Date().toISOString()
       });
     }
-
-    // If no slots were added (e.g. skip-all from step 0), use 9-5 default
     if (!this._slots.length) {
       this._slots.push({ label:'Work', startT:'09:00', endT:'17:00', energy:3 });
     }
-
     const today = new Date();
     for (const sl of this._slots) {
       const [sh,sm] = sl.startT.split(':').map(Number);
@@ -302,10 +337,8 @@ const Onboarding = {
         energyLevel: sl.energy, recurring: 'daily', daysOfWeek: [1,2,3,4,5]
       });
     }
-
     await AppState.saveSettings({ focusDuration: this._focusDur });
     await AppState.setMeta('onboardingComplete', true);
-
     const ov = document.getElementById('onbOverlay');
     if (ov) ov.remove();
     window.location.href = 'planner.html';

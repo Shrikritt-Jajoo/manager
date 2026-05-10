@@ -2,54 +2,171 @@
 .hidden { display: none !important; }
 
 /* ════════════════════════════════════════════════════════════════════════
-   GLASSMORPHISM SYSTEM
-   Philosophy: elements are borderless and backgroundless. Only the
-   backdrop-filter blur reveals them — the starfield softly defocuses
-   behind each surface. A warm sandy tint (--accent) at 6% adds depth.
-   Edges dissolve via mask-image gradients so no hard box is ever visible.
+   BLUR BAND SYSTEM
+   Philosophy: blur originates from screen edges and dissolves inward.
+   No solid boxes, no hard borders — only stacked backdrop-filter layers
+   each masked by a linear gradient so the blur fades naturally to zero
+   before reaching the content centre.
+
+   HOME PAGE  → 4 full-width horizontal bands top + 4 bottom
+   INNER PAGES → 4 full-height vertical column bands, left+right fade
    ════════════════════════════════════════════════════════════════════════ */
 
-/* Base glass — panels, strips, cards */
-.glass {
-  background: rgba(191, 174, 153, 0.06);
-  backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
+/* ── Shared blur layer base ── */
+.blur-top-1, .blur-top-2, .blur-top-3, .blur-top-4,
+.blur-bot-1, .blur-bot-2, .blur-bot-3, .blur-bot-4,
+.blur-col-1, .blur-col-2, .blur-col-3, .blur-col-4 {
+  position: fixed;
+  pointer-events: none;
+  z-index: 5;
+  background: transparent;
   border: none;
-  /* feathered radial mask: centre is opaque, edges dissolve to transparent */
-  mask-image: radial-gradient(ellipse 96% 92% at 50% 50%,
-    black 55%, rgba(0,0,0,.7) 78%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 96% 92% at 50% 50%,
-    black 55%, rgba(0,0,0,.7) 78%, transparent 100%);
+  /* opacity transition so they can be toggled */
+  opacity: 0;
+  transition: opacity 0.6s ease;
 }
 
-/* Heavy glass — modals, onboarding, confirm dialogs */
-.glass-modal {
-  background: rgba(191, 174, 153, 0.10);
-  backdrop-filter: blur(32px) saturate(1.8) brightness(0.78);
-  -webkit-backdrop-filter: blur(32px) saturate(1.8) brightness(0.78);
-  border: none;
-  mask-image: radial-gradient(ellipse 94% 90% at 50% 50%,
-    black 52%, rgba(0,0,0,.65) 76%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 94% 90% at 50% 50%,
-    black 52%, rgba(0,0,0,.65) 76%, transparent 100%);
+/* Show all blur layers (added by shell.js on load) */
+.blur-ready .blur-top-1, .blur-ready .blur-top-2,
+.blur-ready .blur-top-3, .blur-ready .blur-top-4,
+.blur-ready .blur-bot-1, .blur-ready .blur-bot-2,
+.blur-ready .blur-bot-3, .blur-ready .blur-bot-4,
+.blur-ready .blur-col-1, .blur-ready .blur-col-2,
+.blur-ready .blur-col-3, .blur-ready .blur-col-4 { opacity: 1; }
+
+/* ════════════ HOME — TOP BANDS ════════════
+   Each layer anchored top:0, left:0, right:0
+   Mask: black at top edge → transparent at bottom
+   Blur: strongest in layer 1, lightest in layer 4
+═══════════════════════════════════════════ */
+.blur-top-1 {
+  top: 0; left: 0; right: 0; height: 160px;
+  backdrop-filter: blur(24px) brightness(0.80);
+  -webkit-backdrop-filter: blur(24px) brightness(0.80);
+  mask-image: linear-gradient(to bottom,
+    black 0%, black 20%, rgba(0,0,0,.55) 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+    black 0%, black 20%, rgba(0,0,0,.55) 60%, transparent 100%);
+}
+.blur-top-2 {
+  top: 0; left: 0; right: 0; height: 120px;
+  backdrop-filter: blur(14px) brightness(0.84);
+  -webkit-backdrop-filter: blur(14px) brightness(0.84);
+  mask-image: linear-gradient(to bottom,
+    black 0%, black 18%, rgba(0,0,0,.45) 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+    black 0%, black 18%, rgba(0,0,0,.45) 55%, transparent 100%);
+}
+.blur-top-3 {
+  top: 0; left: 0; right: 0; height: 80px;
+  backdrop-filter: blur(7px) brightness(0.88);
+  -webkit-backdrop-filter: blur(7px) brightness(0.88);
+  mask-image: linear-gradient(to bottom,
+    black 0%, black 15%, rgba(0,0,0,.35) 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+    black 0%, black 15%, rgba(0,0,0,.35) 50%, transparent 100%);
+}
+.blur-top-4 {
+  top: 0; left: 0; right: 0; height: 40px;
+  backdrop-filter: blur(2px) brightness(0.92);
+  -webkit-backdrop-filter: blur(2px) brightness(0.92);
+  mask-image: linear-gradient(to bottom,
+    black 0%, rgba(0,0,0,.5) 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+    black 0%, rgba(0,0,0,.5) 50%, transparent 100%);
 }
 
-/* Horizontal panel glass — planner columns, settings layout
-   Fades on left+right only so content scrolls naturally on top/bottom */
-.glass-panel {
-  background: rgba(191, 174, 153, 0.05);
-  backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
-  border: none;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%, black 4%, black 96%, transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%, black 4%, black 96%, transparent 100%
-  );
+/* ════════════ HOME — BOTTOM BANDS ════════════
+   Mirror of top bands, anchored bottom:0
+═══════════════════════════════════════════════ */
+.blur-bot-1 {
+  bottom: 0; left: 0; right: 0; height: 160px;
+  backdrop-filter: blur(24px) brightness(0.80);
+  -webkit-backdrop-filter: blur(24px) brightness(0.80);
+  mask-image: linear-gradient(to top,
+    black 0%, black 20%, rgba(0,0,0,.55) 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top,
+    black 0%, black 20%, rgba(0,0,0,.55) 60%, transparent 100%);
 }
+.blur-bot-2 {
+  bottom: 0; left: 0; right: 0; height: 120px;
+  backdrop-filter: blur(14px) brightness(0.84);
+  -webkit-backdrop-filter: blur(14px) brightness(0.84);
+  mask-image: linear-gradient(to top,
+    black 0%, black 18%, rgba(0,0,0,.45) 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top,
+    black 0%, black 18%, rgba(0,0,0,.45) 55%, transparent 100%);
+}
+.blur-bot-3 {
+  bottom: 0; left: 0; right: 0; height: 80px;
+  backdrop-filter: blur(7px) brightness(0.88);
+  -webkit-backdrop-filter: blur(7px) brightness(0.88);
+  mask-image: linear-gradient(to top,
+    black 0%, black 15%, rgba(0,0,0,.35) 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top,
+    black 0%, black 15%, rgba(0,0,0,.35) 50%, transparent 100%);
+}
+.blur-bot-4 {
+  bottom: 0; left: 0; right: 0; height: 40px;
+  backdrop-filter: blur(2px) brightness(0.92);
+  -webkit-backdrop-filter: blur(2px) brightness(0.92);
+  mask-image: linear-gradient(to top,
+    black 0%, rgba(0,0,0,.5) 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top,
+    black 0%, rgba(0,0,0,.5) 50%, transparent 100%);
+}
+
+/* ════════════ INNER PAGES — COLUMN BANDS ════════════
+   Full height, centred, width = content column.
+   Mask fades left→right: transparent at both edges, opaque in centre.
+   Layer 1 = strongest blur, widest. Layer 4 = softest, narrowest.
+   Actual widths overridden per page below.
+══════════════════════════════════════════════════════ */
+.blur-col-1, .blur-col-2, .blur-col-3, .blur-col-4 {
+  top: 0; bottom: 0;
+  left: 50%; transform: translateX(-50%);
+  mask-image: linear-gradient(to right,
+    transparent 0%, black 10%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right,
+    transparent 0%, black 10%, black 90%, transparent 100%);
+}
+.blur-col-1 {
+  backdrop-filter: blur(22px) brightness(0.82);
+  -webkit-backdrop-filter: blur(22px) brightness(0.82);
+}
+.blur-col-2 {
+  backdrop-filter: blur(13px) brightness(0.86);
+  -webkit-backdrop-filter: blur(13px) brightness(0.86);
+}
+.blur-col-3 {
+  backdrop-filter: blur(6px) brightness(0.90);
+  -webkit-backdrop-filter: blur(6px) brightness(0.90);
+}
+.blur-col-4 {
+  backdrop-filter: blur(2px) brightness(0.94);
+  -webkit-backdrop-filter: blur(2px) brightness(0.94);
+}
+
+/* ── Per-page column widths ── */
+body.settings-page .blur-col-1 { width: 600px; }
+body.settings-page .blur-col-2 { width: 624px; }
+body.settings-page .blur-col-3 { width: 648px; }
+body.settings-page .blur-col-4 { width: 672px; }
+
+body.planner-page .blur-col-1 { width: min(920px, 94vw); }
+body.planner-page .blur-col-2 { width: min(948px, 96vw); }
+body.planner-page .blur-col-3 { width: min(976px, 98vw); }
+body.planner-page .blur-col-4 { width: min(1004px, 100vw); }
+
+body.stats-page .blur-col-1 { width: 860px; }
+body.stats-page .blur-col-2 { width: 884px; }
+body.stats-page .blur-col-3 { width: 908px; }
+body.stats-page .blur-col-4 { width: 932px; }
+
+body.focus-page .blur-col-1 { width: 560px; }
+body.focus-page .blur-col-2 { width: 584px; }
+body.focus-page .blur-col-3 { width: 608px; }
+body.focus-page .blur-col-4 { width: 632px; }
 
 /* ── UI wrapper ── */
 .ui { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
@@ -87,43 +204,6 @@
   z-index: 7;
 }
 .nav.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ── Edge blur masks (top / bottom / bottom-right) ── */
-.mask-top, .mask-bottom, .mask-br {
-  position: absolute;
-  pointer-events: none;
-  z-index: 5;
-  opacity: 0;
-  transition: opacity var(--t-mask);
-}
-.show-masks .mask-top,
-.show-masks .mask-bottom,
-.show-masks .mask-br { opacity: 1; }
-
-.mask-top {
-  top: 0; left: 0; right: 0; height: 110px;
-  background: linear-gradient(to bottom, rgba(0,0,0,.45) 0%, rgba(0,0,0,.20) 50%, rgba(0,0,0,0) 100%);
-  backdrop-filter: blur(9px) brightness(.78);
-  -webkit-backdrop-filter: blur(9px) brightness(.78);
-  mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 52%, transparent 100%);
-}
-.mask-bottom {
-  bottom: 0; left: 0; right: 0; height: 120px;
-  background: linear-gradient(to top, rgba(0,0,0,.45) 0%, rgba(0,0,0,.18) 50%, rgba(0,0,0,0) 100%);
-  backdrop-filter: blur(9px) brightness(.78);
-  -webkit-backdrop-filter: blur(9px) brightness(.78);
-  mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to top, black 0%, black 52%, transparent 100%);
-}
-.mask-br {
-  bottom: 0; right: 0; width: 360px; height: 150px;
-  background: radial-gradient(ellipse at 100% 100%, rgba(0,0,0,.48) 0%, rgba(0,0,0,.22) 46%, rgba(0,0,0,0) 72%);
-  backdrop-filter: blur(8px) brightness(.78);
-  -webkit-backdrop-filter: blur(8px) brightness(.78);
-  mask-image: radial-gradient(ellipse at 100% 100%, black 0%, black 46%, transparent 72%);
-  -webkit-mask-image: radial-gradient(ellipse at 100% 100%, black 0%, black 46%, transparent 72%);
-}
 
 /* ── Toast ── */
 #toast {
@@ -163,10 +243,6 @@
   border: none;
   clip-path: var(--clip);
   display: flex; flex-direction: column; gap: var(--sp5);
-  mask-image: radial-gradient(ellipse 94% 90% at 50% 50%,
-    black 52%, rgba(0,0,0,.6) 76%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 94% 90% at 50% 50%,
-    black 52%, rgba(0,0,0,.6) 76%, transparent 100%);
 }
 .confirm-msg { font-size: 14px; line-height: 1.5; color: var(--text); }
 .confirm-actions { display: flex; gap: var(--sp3); justify-content: flex-end; }
@@ -200,15 +276,10 @@
   align-items: center; text-align: center;
   padding: var(--sp8);
   border-radius: 2px;
-  /* borderless glass-modal surface */
   background: rgba(191, 174, 153, 0.10);
   backdrop-filter: blur(32px) saturate(1.8) brightness(0.78);
   -webkit-backdrop-filter: blur(32px) saturate(1.8) brightness(0.78);
   border: none;
-  mask-image: radial-gradient(ellipse 96% 94% at 50% 50%,
-    black 56%, rgba(0,0,0,.7) 80%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 96% 94% at 50% 50%,
-    black 56%, rgba(0,0,0,.7) 80%, transparent 100%);
 }
 .onb-title {
   font-size: clamp(1.4rem, 3vw, 2rem);

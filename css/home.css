@@ -42,11 +42,11 @@
   opacity: 1;
   pointer-events: auto;
 }
-.hidden { display: none !important; }
 
-/* ── Bottom-right block
-   Borderless glass: no border, no solid bg — just a warm tinted blur
-   that dissolves into the starfield on all edges via mask-image          ── */
+/* ── Bottom-right task block ──
+   No backdrop-filter, no background fill, no mask.
+   It floats as pure text above the ambient bottom blur band.
+   The blur haze beneath it is provided by .blur-bot-1/2/3/4.        ── */
 .br-block {
   position: absolute; right: 28px; bottom: 28px;
   display: flex; flex-direction: column;
@@ -54,16 +54,9 @@
   opacity: 0; transition: opacity var(--t-slow);
   z-index: 7;
   padding: var(--sp4) var(--sp5);
-  /* glassmorphism surface */
-  background: rgba(191, 174, 153, 0.06);
-  backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
+  /* pure text — no glass box */
+  background: transparent;
   border: none;
-  /* edges fade to transparent — no visible box */
-  mask-image: radial-gradient(ellipse 90% 88% at 75% 80%,
-    black 40%, rgba(0,0,0,.6) 68%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 88% at 75% 80%,
-    black 40%, rgba(0,0,0,.6) 68%, transparent 100%);
 }
 .br-block.show { opacity: 1; }
 .br-task-name {
@@ -76,8 +69,9 @@
   text-transform: uppercase; color: var(--text-muted);
 }
 
-/* ── Subtask strip
-   Same borderless glass — blur dissolves left and right into the void  ── */
+/* ── Subtask strip ──
+   No backdrop-filter, no background fill, no mask.
+   Floats as pure text above the ambient bottom blur band.             ── */
 .strip {
   position: absolute; left: 50%; bottom: 28px;
   transform: translateX(-50%);
@@ -86,20 +80,9 @@
   opacity: 0; transition: opacity var(--t-slow);
   z-index: 7;
   padding: var(--sp3) var(--sp5);
-  /* glassmorphism surface */
-  background: rgba(191, 174, 153, 0.06);
-  backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
+  /* pure text — no glass box */
+  background: transparent;
   border: none;
-  /* horizontal fade — left and right edges dissolve */
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%, black 8%, black 92%, transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%, black 8%, black 92%, transparent 100%
-  );
 }
 .strip.show { opacity: 1; }
 .strip-meta { flex: 1; min-width: 0; }
