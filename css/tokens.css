@@ -8,6 +8,18 @@
   --accent-text:    #000000;
   --progress-track: rgba(255,255,255,.09);
 
+  /* ── Glass tints (warm sandy accent, layered opacity) ──────────────────
+     These are used as background on glass elements. The backdrop-filter
+     blur does the heavy lifting; the tint just adds warmth and depth.
+     backdrop-filter values used across the codebase:
+       panel/strip : blur(18px) saturate(1.5) brightness(0.88)
+       modal/onb   : blur(32px) saturate(1.8) brightness(0.78)
+       edge masks  : blur(9px)  brightness(.72)
+  ── */
+  --glass-tint:       rgba(191, 174, 153, 0.06);
+  --glass-tint-modal: rgba(191, 174, 153, 0.10);
+  --glass-tint-heavy: rgba(191, 174, 153, 0.14);
+
   /* ── Typography ── */
   --font:           Inter, system-ui, sans-serif;
 

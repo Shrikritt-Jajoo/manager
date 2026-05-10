@@ -1,4 +1,4 @@
-/* ---- Page shell ---- */
+/* ── Page shell ── */
 body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
 
 .settings-nav {
@@ -6,16 +6,17 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   display: flex; gap: 6px; z-index: 10;
 }
 
-/* ---- Tab bar ---- */
+/* ── Tab bar ── */
 .stab-bar {
   position: fixed;
   top: 68px; left: 50%;
   transform: translateX(-50%);
   display: flex; gap: 2px;
   z-index: 9;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* borderless glass tab bar */
+  background: rgba(191, 174, 153, 0.07);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
   padding: 4px;
   clip-path: var(--clip);
 }
@@ -28,17 +29,41 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   transition: background var(--t-base), color var(--t-base);
   cursor: pointer;
 }
-.stab:hover  { color: var(--text-muted); background: rgba(255,255,255,.05); }
+.stab:hover  { color: var(--text-muted); background: rgba(191,174,153,.08); }
 .stab.active { background: var(--accent); color: var(--accent-text); }
 
-/* ---- Layout ---- */
+/* ── Layout — borderless, top+bottom edge fade ── */
 .settings-layout {
   position: relative; z-index: 7;
   padding: 118px var(--sp8) 80px;
   max-width: 600px; margin: 0 auto;
+  /* very faint tint so text reads against the starfield */
+  background: rgba(191, 174, 153, 0.04);
+  backdrop-filter: blur(14px) saturate(1.4) brightness(0.90);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4) brightness(0.90);
+  border: none;
+  /* top and bottom dissolve, left/right dissolve slightly */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%, black 6%, black 94%, transparent 100%
+  ),
+  linear-gradient(
+    to right,
+    transparent 0%, black 3%, black 97%, transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%, black 6%, black 94%, transparent 100%
+  ),
+  linear-gradient(
+    to right,
+    transparent 0%, black 3%, black 97%, transparent 100%
+  );
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
 }
 
-/* ---- Sections / panels ---- */
+/* ── Sections ── */
 .settings-section {
   display: flex; flex-direction: column; gap: var(--sp5);
   padding-bottom: var(--sp6);
@@ -49,15 +74,15 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
   color: var(--text-muted);
   padding-bottom: var(--sp3);
-  border-bottom: 1px solid rgba(245,247,251,.06);
+  border-bottom: 1px solid rgba(245,247,251,.05);
 }
 
-/* ---- Rows ---- */
+/* ── Rows ── */
 .setting-row  { display: flex; justify-content: space-between; align-items: center; gap: var(--sp5); }
 .setting-label { font-size: 13px; color: var(--text); }
 .setting-desc  { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
 
-/* ---- Segmented controls ---- */
+/* ── Segmented controls ── */
 .seg-ctrl { display: flex; gap: 4px; }
 .seg-btn {
   padding: 6px 12px; background: transparent; border: none;
@@ -67,9 +92,9 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   cursor: pointer;
 }
 .seg-btn.active              { background: var(--accent); color: var(--accent-text); }
-.seg-btn:hover:not(.active)  { background: rgba(255,255,255,.07); }
+.seg-btn:hover:not(.active)  { background: rgba(191,174,153,.08); }
 
-/* ---- Colour swatches ---- */
+/* ── Colour swatches ── */
 .color-row   { display: flex; gap: var(--sp4); flex-wrap: wrap; align-items: center; }
 .color-swatch {
   width: 28px; height: 28px;
@@ -77,7 +102,7 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   cursor: pointer; border: none; padding: 0;
 }
 
-/* ---- Text / number inputs ---- */
+/* ── Text / number inputs ── */
 .settings-input {
   background: transparent; border: none;
   border-bottom: 1px solid rgba(245,247,251,.14);
@@ -89,16 +114,16 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
 .settings-input[type=password]   { letter-spacing: .22em; }
 .settings-input[type=number]     { width: 80px; }
 
-/* ---- Select ---- */
+/* ── Select ── */
 .settings-select {
   background: transparent; border: none;
   border-bottom: 1px solid rgba(245,247,251,.14);
   color: var(--text); font-size: 13px;
   padding: var(--sp2) 0;
 }
-.settings-select option { background: #111; }
+.settings-select option { background: #0a0a0a; }
 
-/* ---- Toggle switch ---- */
+/* ── Toggle switch ── */
 .toggle-wrap { display: flex; align-items: center; gap: var(--sp3); }
 .toggle {
   width: 36px; height: 20px; border-radius: 10px;
@@ -116,5 +141,5 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
 .toggle.on          { background: var(--accent); }
 .toggle.on::after   { transform: translateX(16px); background: var(--accent-text); }
 
-/* ---- Data actions ---- */
+/* ── Data actions ── */
 .data-actions { display: flex; flex-direction: column; gap: var(--sp4); }

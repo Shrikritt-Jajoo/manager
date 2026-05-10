@@ -2,11 +2,13 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: #000000;
   color: var(--text);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
 }
+/* force canvas to always render on pure black */
+#starCanvas { background: #000000; display: block; }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 input, textarea, select {

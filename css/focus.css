@@ -12,21 +12,19 @@ body.focus-page { overflow: hidden; }
   font-weight: 260; letter-spacing: .22em;
   color: var(--accent); line-height: .9;
   text-align: center; width: 100%;
-  /* removed margin-left bias — was causing optical right-shift */
 }
 .focus-timer-big.paused { opacity: .55; }
 .focus-prog-wrap { width: min(400px, 80vw); }
 .focus-controls { display: flex; gap: var(--sp4); margin-top: var(--sp3); }
 
-/* Post-session modal */
+/* ── Post-session modal — borderless glass, warm tint, elliptical feather ── */
 .session-modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.70);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(0,0,0,.60);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center;
   z-index: 400;
-  /* allow internal scroll on short viewports */
   overflow-y: auto;
   padding: var(--sp6) 0;
 }
@@ -35,12 +33,17 @@ body.focus-page { overflow: hidden; }
   max-height: calc(100vh - 48px);
   overflow-y: auto;
   padding: var(--sp8);
-  background: rgba(8, 8, 14, 0.82);
-  border: 1px solid rgba(245, 247, 251, 0.07);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  /* borderless glassmorphism */
+  background: rgba(191, 174, 153, 0.10);
+  backdrop-filter: blur(32px) saturate(1.8) brightness(0.78);
+  -webkit-backdrop-filter: blur(32px) saturate(1.8) brightness(0.78);
+  border: none;
   clip-path: var(--clip);
   display: flex; flex-direction: column; gap: var(--sp5);
+  mask-image: radial-gradient(ellipse 92% 90% at 50% 50%,
+    black 52%, rgba(0,0,0,.65) 75%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 92% 90% at 50% 50%,
+    black 52%, rgba(0,0,0,.65) 75%, transparent 100%);
 }
 .sm-title  { font-size: 16px; letter-spacing: .14em; text-transform: uppercase; }
 .sm-sub    { font-size: 13px; color: var(--text-muted); }
@@ -49,7 +52,7 @@ body.focus-page { overflow: hidden; }
   width: 100%;
   accent-color: var(--accent);
   cursor: pointer;
-  touch-action: none;   /* prevents scroll-hijack on touch devices */
+  touch-action: none;
 }
 .sm-range-val { font-size: 13px; color: var(--accent); }
 .sm-notes  {

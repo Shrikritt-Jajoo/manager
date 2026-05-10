@@ -11,7 +11,6 @@ const Starfield = (() => {
   ];
 
   function cfg() {
-    // Phase 0 fix: use AppState.getSettings() which still works in v2 state.js
     const s = (typeof AppState !== 'undefined') ? (AppState.getSettings() || {}) : {};
     return {
       speedK:     SPEED_MAP[s.starSpeed]    || SPEED_MAP.slow,
@@ -86,9 +85,11 @@ const Starfield = (() => {
     const c   = cfg();
     drift += dt * c.speedK;
 
-    ctx.clearRect(0, 0, W, H);
-
+    /* fill pure black first — prevents any blue/tinted bleed from compositing */
     ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, W, H);
+
     specks.forEach(sp => {
       ctx.fillStyle = `rgba(238,238,238,${sp.a})`;
       ctx.fillRect(sp.x, sp.y, 1, 1);
@@ -116,7 +117,6 @@ const Starfield = (() => {
       ctx = canvas.getContext('2d');
       resize();
       window.addEventListener('resize', () => resize());
-      // Phase 0 fix: AppState.onMeta still exists in v2 state.js — no change needed
       if (typeof AppState !== 'undefined') {
         AppState.onMeta('settings', () => { build(); });
       }

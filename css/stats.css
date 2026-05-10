@@ -8,15 +8,20 @@ body.stats-page { overflow: auto; height: auto; min-height: 100vh; }
 .stats-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp5);
 }
+
+/* ── Metric card — borderless glass, warm tint, radial feather ── */
 .metric-card {
   padding: var(--sp6);
-  /* frosted glass metric cards */
-  background: rgba(8, 8, 14, 0.60);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  border: 1px solid rgba(245, 247, 251, 0.06);
+  background: rgba(191, 174, 153, 0.06);
+  backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(0.88);
+  border: none;
   clip-path: var(--clip);
   display: flex; flex-direction: column; gap: var(--sp3);
+  mask-image: radial-gradient(ellipse 90% 88% at 50% 50%,
+    black 48%, rgba(0,0,0,.6) 72%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 88% at 50% 50%,
+    black 48%, rgba(0,0,0,.6) 72%, transparent 100%);
 }
 .metric-val  { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 260; letter-spacing: .12em; color: var(--accent); }
 .metric-lbl  { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--text-muted); }
