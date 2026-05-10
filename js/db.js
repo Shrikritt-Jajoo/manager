@@ -5,6 +5,10 @@
 //                   IndexedDB fallback (standalone / file://)
 // Phase 0 upgrade: added settings, gmailConfig, aiConfig,
 //                  registeredAiJobs stores; migrates old meta
+// Phase A upgrade: DOMContentLoaded bootstrap — fires
+//                  ChronoFlow.detect() then Starfield.init()
+//                  so server mode is resolved before any page
+//                  module calls AppState.init().
 // =========================================================
 
 // ---- Config ------------------------------------------------------------
@@ -257,14 +261,10 @@ const DB = {
 
   // ---- Legacy helpers preserved for shell.js / Onboarding compat -------
   async getMeta(key) {
-    // In v2, settings live in the 'settings' store (key:'main').
-    // All other meta keys are kept in the legacy meta store if it exists,
-    // otherwise we fall back gracefully.
     if (key === 'settings') {
       const row = await this.get('settings', 'main');
       return row || undefined;
     }
-    // For remaining legacy meta keys, try IDB meta store directly
     if (!ChronoFlow.serverMode) {
       try {
         const db = await _idb.open();
@@ -288,7 +288,6 @@ const DB = {
         : { key: 'main', value };
       return this.put('settings', row);
     }
-    // For non-settings meta, write to legacy meta store (IDB only)
     if (!ChronoFlow.serverMode) {
       try {
         const db = await _idb.open();
@@ -306,8 +305,6 @@ const DB = {
 };
 
 // ---- Version snapshot helpers (server mode only) -----------------------
-// No-op silently when serverMode is false — safe to call anywhere.
-
 async function takeSnapshot(name) {
   if (!ChronoFlow.serverMode) return null;
   await flushAllWrites();
@@ -347,3 +344,31 @@ async function restoreVersion(name) {
     return false;
   } catch { return false; }
 }
+
+// ---- Phase A: page bootstrap -------------------------------------------
+// Runs on every page automatically because db.js is the first script tag.
+// 1. Fires ChronoFlow.detect() — resolves server vs IDB mode ASAP.
+// 2. After detect resolves, hands off to Starfield.init() (defined in
+//    starfield.js which loads after db.js).
+// Page-specific JS (home.js, planner.js, etc.) call Onboarding.check()
+// inside their own DOMContentLoaded — by then detect() is already settled
+// because all scripts are synchronous and detect() is a shared Promise
+// that caches its result in ChronoFlow._ready.
+//
+// Why here and not in each HTML file:
+//   - Single source of truth — no risk of one page forgetting the call.
+//   - No HTML files need to change.
+//   - detect() is idempotent; calling it twice is harmless.
+document.addEventListener('DOMContentLoaded', () => {
+  // Kick off server detection immediately (non-blocking).
+  // The Promise is cached in ChronoFlow._ready so any later await
+  // ChronoFlow.detect() just gets the already-resolved value.
+  ChronoFlow.detect().then(serverMode => {
+    if (serverMode) console.info('[manager] server mode active');
+  });
+
+  // Init starfield on every page that has a #starCanvas element.
+  if (typeof Starfield !== 'undefined') {
+    Starfield.init();
+  }
+});
