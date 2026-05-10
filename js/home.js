@@ -1,9 +1,8 @@
 'use strict';
-let PageInit;
-
+// Phase E: removed duplicate Starfield.init() — db.js bootstrap handles it.
+// Phase E: wired daily-email AI job trigger button on home page.
 (async () => {
   await AppState.init();
-  Starfield.init();
 
   const onb = AppState.getMeta('onboardingComplete');
   if (!onb) { Onboarding.start(); return; }
@@ -27,11 +26,46 @@ const HomeController = {
     this._bindUI();
     this._loadTask();
     this._checkFocusState();
+    this._bindDailyEmail();
 
     AppState.onMeta('currentTaskId',    () => this._loadTask());
     AppState.onMeta('currentSubtaskId', () => this._loadTask());
     AppState.onMeta('focusActive',      () => this._checkFocusState());
     AppState.on('tasks',                () => this._loadTask());
+  },
+
+  // ---- Daily email AI trigger -------------------------------------------
+  _bindDailyEmail() {
+    const btn    = document.getElementById('dailyEmailBtn');
+    const status = document.getElementById('dailyEmailStatus');
+    if (!btn) return;
+    btn.onclick = async () => {
+      if (!AI.isOnline()) { Shell.toast('No internet — AI unavailable offline'); return; }
+      if (!AI._getKey())  { Shell.toast('Add Gemini API key in Settings → AI first'); return; }
+      if (status) status.textContent = 'Generating…';
+      btn.disabled = true;
+      try {
+        const result = await AI.runJob('daily-email');
+        btn.disabled = false;
+        if (!result || !result.subject) throw new Error('Empty result');
+        if (status) status.textContent = '';
+        // Show accept/discard modal
+        const accepted = await Shell.confirm(
+          `Send this email?\n\nSubject: ${result.subject}\n\n${result.body.slice(0, 300)}${result.body.length > 300 ? '…' : ''}`
+        );
+        if (accepted) {
+          const blocks = AppState.get('scheduleBlocks');
+          await Gmail.sendSchedule(blocks, result.subject, result.body);
+          Shell.toast('Daily email sent!');
+        } else {
+          Shell.toast('Email discarded');
+        }
+      } catch(e) {
+        btn.disabled = false;
+        if (status) status.textContent = '✗ ' + e.message;
+        Shell.toast('AI error: ' + e.message);
+      }
+    };
   },
 
   _tick() {
@@ -134,11 +168,11 @@ const HomeController = {
 
   _checkFocusState() {
     const active = AppState.getMeta('focusActive');
-    const clockTime   = document.getElementById('clockTime');
-    const clockDate   = document.getElementById('clockDate');
-    const focusTimer  = document.getElementById('homeFocusTimer');
-    const focusCtrl   = document.getElementById('focusCtrlHover');
-    const brTimer     = document.getElementById('brTimer');
+    const clockTime  = document.getElementById('clockTime');
+    const clockDate  = document.getElementById('clockDate');
+    const focusTimer = document.getElementById('homeFocusTimer');
+    const focusCtrl  = document.getElementById('focusCtrlHover');
+    const brTimer    = document.getElementById('brTimer');
 
     if (active) {
       clockTime.classList.add('hidden');
@@ -146,20 +180,18 @@ const HomeController = {
       focusTimer.classList.remove('hidden');
       focusCtrl.classList.remove('hidden');
 
-      const startedAt = AppState.getMeta('focusStartedAt');
-      const settings  = AppState.getSettings();
-      const planned   = (settings.focusDuration || 25) * 60;
-      const saved     = AppState.getMeta('focusTimerRemain');
-      this._remain    = saved !== undefined ? saved : planned;
-      this._paused    = false;
-      this._elapsedS  = 0;
+      const settings = AppState.getSettings();
+      const planned  = (settings.focusDuration || 25) * 60;
+      const saved    = AppState.getMeta('focusTimerRemain');
+      this._remain   = saved !== undefined ? saved : planned;
+      this._paused   = false;
+      this._elapsedS = 0;
 
       clearInterval(this._focusInterval);
       this._focusInterval = setInterval(() => this._focusTick(), 1000);
       this._focusTick();
       this._updateBrTimer();
 
-      // keep masks subtly visible during focus
       document.getElementById('ui').classList.add('show-masks');
       document.getElementById('brBlock').classList.add('show');
       document.getElementById('strip').classList.add('show');
@@ -175,10 +207,7 @@ const HomeController = {
 
   _focusTick() {
     if (this._paused) return;
-    if (this._remain > 0) {
-      this._remain--;
-      this._elapsedS++;
-    }
+    if (this._remain > 0) { this._remain--; this._elapsedS++; }
     const el = document.getElementById('homeFocusTimer');
     if (el) el.textContent = Utils.formatCountdown(this._remain);
     AppState.setMeta('focusTimerRemain', this._remain);
@@ -202,9 +231,7 @@ const HomeController = {
   async _endFocus() {
     clearInterval(this._focusInterval);
     const taskId = AppState.getMeta('currentTaskId');
-    const task   = AppState.get('tasks').find(t => t.id === taskId);
     await AppState.setMeta('focusActive', false);
-    // Navigate to focus page for post-session modal
     const actualMins = Math.ceil(this._elapsedS / 60);
     sessionStorage.setItem('cf_session', JSON.stringify({
       taskId, actualMins, startedAt: AppState.getMeta('focusStartedAt')

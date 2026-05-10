@@ -1,5 +1,5 @@
 'use strict';
-// Phase 6: removed duplicate Starfield.init() — db.js DOMContentLoaded bootstrap handles it.
+// Phase E: wired weekly-review AI job trigger.
 (async () => {
   await AppState.init();
   Shell.bindNavButtons();
@@ -9,6 +9,48 @@
 const Stats = {
   init() {
     this._render();
+    this._bindWeeklyReview();
+  },
+
+  // ---- AI: weekly-review trigger ----------------------------------------
+  _bindWeeklyReview() {
+    const btn     = document.getElementById('weeklyReviewBtn');
+    const status  = document.getElementById('weeklyReviewStatus');
+    const preview = document.getElementById('weeklyReviewPreview');
+    const mdEl    = document.getElementById('weeklyReviewMd');
+    const copyBtn = document.getElementById('weeklyReviewCopy');
+    const discBtn = document.getElementById('weeklyReviewDiscard');
+    if (!btn) return;
+
+    btn.onclick = async () => {
+      if (!AI.isOnline()) { Shell.toast('No internet — AI unavailable offline'); return; }
+      if (!AI._getKey())  { Shell.toast('Add Gemini API key in Settings → AI first'); return; }
+      if (status) status.textContent = 'Generating…';
+      btn.disabled = true;
+      try {
+        const result = await AI.runJob('weekly-review');
+        btn.disabled = false;
+        if (!result || !result.markdown) throw new Error('Empty result');
+        if (status) status.textContent = '';
+        if (mdEl)    mdEl.textContent = result.markdown;
+        if (preview) preview.style.display = '';
+      } catch(e) {
+        btn.disabled = false;
+        if (status) status.textContent = '✗ ' + e.message;
+        Shell.toast('Weekly review failed: ' + e.message);
+      }
+    };
+
+    if (copyBtn) copyBtn.onclick = () => {
+      const md = mdEl ? mdEl.textContent : '';
+      navigator.clipboard.writeText(md).then(() => Shell.toast('Copied!')).catch(() => Shell.toast('Copy failed'));
+    };
+
+    if (discBtn) discBtn.onclick = () => {
+      if (preview) preview.style.display = 'none';
+      if (status)  status.textContent = '';
+      if (mdEl)    mdEl.textContent = '';
+    };
   },
 
   _render() {
@@ -125,7 +167,7 @@ const Stats = {
   _renderRateChart() {
     const canvas = document.getElementById('rateChart');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx  = canvas.getContext('2d');
     const all  = AppState.get('tasks');
     const done = all.filter(t => t.isCompleted).length;
     const total= all.length;

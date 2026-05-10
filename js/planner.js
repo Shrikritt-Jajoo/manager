@@ -1,6 +1,6 @@
 'use strict';
-// Phase 4: removed duplicate Starfield.init() — db.js DOMContentLoaded bootstrap handles it.
-// Phase 4: fixed AppState._emit('scheduleBlocks') -> AppState.emit('scheduleBlocks') (private->public).
+// Phase 4: removed duplicate Starfield.init(); fixed AppState.emit.
+// Phase E: wired task-critique + backlog-cleanup AI job triggers with per-item accept/reject.
 (async () => {
   await AppState.init();
   Shell.bindNavButtons();
@@ -13,6 +13,7 @@ const Planner = {
   init() {
     this._render();
     this._bindForms();
+    this._bindAiSidebar();
     AppState.on('tasks',          () => this._render());
     AppState.on('subtasks',       () => this._renderDetail());
     AppState.on('goals',          () => this._renderGoals());
@@ -26,6 +27,78 @@ const Planner = {
     this._renderSlots();
     this._renderSchedule();
     this._renderDetail();
+  },
+
+  // ---- AI sidebar: task-critique + backlog-cleanup ----------------------
+  _bindAiSidebar() {
+    const critiqueBtn = document.getElementById('taskCritiqueBtn');
+    const cleanupBtn  = document.getElementById('backlogCleanupBtn');
+    if (critiqueBtn) critiqueBtn.onclick = () => this._runSidebarJob('task-critique');
+    if (cleanupBtn)  cleanupBtn.onclick  = () => this._runSidebarJob('backlog-cleanup');
+  },
+
+  async _runSidebarJob(jobId) {
+    const panel = document.getElementById('aiJobPanel');
+    if (!AI.isOnline()) { Shell.toast('No internet — AI unavailable offline'); return; }
+    if (!AI._getKey())  { Shell.toast('Add Gemini API key in Settings → AI first'); return; }
+    if (panel) { panel.style.display = ''; panel.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Running AI…</div>'; }
+    try {
+      const result = await AI.runJob(jobId);
+      if (!result || !result.items || !result.items.length) {
+        if (panel) panel.innerHTML = '<div style="font-size:12px;color:var(--text-faint)">No suggestions.</div>';
+        return;
+      }
+      this._renderAiJobPanel(panel, result, jobId);
+    } catch(e) {
+      if (panel) panel.innerHTML = `<div style="font-size:12px;color:var(--text-faint)">✗ ${Utils.escapeHtml(e.message)}</div>`;
+      Shell.toast('AI error: ' + e.message);
+    }
+  },
+
+  _renderAiJobPanel(panel, result, jobId) {
+    if (!panel) return;
+    const job = AppState.get('registeredAiJobs').find(j => j.id === jobId);
+    const accepted = new Set();
+
+    panel.innerHTML = `
+      <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:var(--sp3)">
+        ${Utils.escapeHtml(result.summary || 'AI suggestions')}
+      </div>
+      <div id="aiItemList"></div>
+      <div style="display:flex;gap:var(--sp3);margin-top:var(--sp4)">
+        <button class="abtn sm" id="aiApplyBtn">Apply selected</button>
+        <button class="abtn sm danger" id="aiDiscardBtn">Discard all</button>
+      </div>`;
+
+    const listEl = panel.querySelector('#aiItemList');
+    result.items.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:var(--sp3);padding:var(--sp3) 0;border-bottom:1px solid rgba(245,247,251,.05)';
+      const chk = document.createElement('input');
+      chk.type = 'checkbox'; chk.checked = true; chk.style.marginTop = '2px';
+      chk.onchange = () => chk.checked ? accepted.add(i) : accepted.delete(i);
+      accepted.add(i); // default all accepted
+
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:12px;color:var(--text-muted);flex:1';
+      const actionTag = `<span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-right:4px">${item.action}</span>`;
+      const titleText = item.payload && item.payload.title ? Utils.escapeHtml(item.payload.title) : (item.id ? `id: ${item.id}` : JSON.stringify(item.payload).slice(0, 80));
+      label.innerHTML = actionTag + titleText;
+
+      row.appendChild(chk);
+      row.appendChild(label);
+      listEl.appendChild(row);
+    });
+
+    panel.querySelector('#aiApplyBtn').onclick = async () => {
+      const count = await AI.applyOutputs(job, result, accepted);
+      Shell.toast(`Applied ${count} change${count !== 1 ? 's' : ''}`);
+      panel.style.display = 'none';
+    };
+    panel.querySelector('#aiDiscardBtn').onclick = () => {
+      panel.style.display = 'none';
+      panel.innerHTML = '';
+    };
   },
 
   // ── Backlog ────────────────────────────────────────────────────────────────────
@@ -108,9 +181,7 @@ const Planner = {
     el.querySelectorAll('[data-action]').forEach(btn => {
       btn.onclick = async () => {
         const { action, id } = btn.dataset;
-        if (action === 'del-goal') {
-          if (await Shell.confirm('Delete this goal?')) await AppState.remove('goals', id);
-        }
+        if (action === 'del-goal')  { if (await Shell.confirm('Delete this goal?')) await AppState.remove('goals', id); }
         if (action === 'breakdown') await this._breakdownGoal(id);
       };
     });
@@ -119,8 +190,7 @@ const Planner = {
   async _breakdownGoal(goalId) {
     const goal = AppState.get('goals').find(g => g.id === goalId);
     if (!goal) return;
-    const key = AppState.getSettings().geminiKey;
-    if (!key) { Shell.toast('Add Gemini API key in Settings first'); return; }
+    if (!AI._getKey()) { Shell.toast('Add Gemini API key in Settings first'); return; }
     Shell.toast('Asking AI to break down goal…');
     try {
       const tasks = await AI.breakdownGoal(goal.title, goal.description);
@@ -195,7 +265,7 @@ const Planner = {
     if (empty)   empty.style.display   = 'none';
     if (content) content.style.display = '';
 
-    const subs   = AppState.get('subtasks').filter(s => s.taskId === task.id);
+    const subs    = AppState.get('subtasks').filter(s => s.taskId === task.id);
     const hasSubs = subs.length > 0;
 
     content.innerHTML = `
@@ -272,8 +342,8 @@ const Planner = {
           type:             fd.get('type'),
           estimatedMinutes: parseInt(fd.get('estimatedMinutes')) || 30,
           remainingMinutes: parseInt(fd.get('remainingMinutes')) || 30,
-          priority:         parseInt(fd.get('priority')) || 3,
-          effort:           parseInt(fd.get('effort'))   || 3,
+          priority:         parseInt(fd.get('priority'))  || 3,
+          effort:           parseInt(fd.get('effort'))    || 3,
           energyNeed:       parseInt(fd.get('energyNeed')) || 3,
           deadline:         fd.get('deadline') ? new Date(fd.get('deadline')).toISOString() : null,
           nextStep:         fd.get('nextStep') || '',
@@ -319,9 +389,7 @@ const Planner = {
     });
 
     content.querySelectorAll('[data-sub-title]').forEach(inp => {
-      inp.onblur = async () => {
-        await AppState.update('subtasks', inp.dataset.subTitle, { title: inp.value });
-      };
+      inp.onblur = async () => await AppState.update('subtasks', inp.dataset.subTitle, { title: inp.value });
     });
 
     content.querySelectorAll('[data-step-input]').forEach(inp => {
@@ -403,7 +471,6 @@ const Planner = {
       const schedule = await Scheduler.buildSchedule();
       await DB.clear('scheduleBlocks');
       for (const b of schedule) await DB.put('scheduleBlocks', b);
-      // Phase 4 fix: was AppState._emit (private) — must use AppState.emit (public)
       AppState.get('scheduleBlocks').length = 0;
       schedule.forEach(b => AppState.get('scheduleBlocks').push(b));
       AppState.emit('scheduleBlocks');

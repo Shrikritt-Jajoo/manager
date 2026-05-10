@@ -87,6 +87,17 @@
         </form>
       </details>
     </section>
+
+    <!-- Phase E: AI sidebar jobs -->
+    <section aria-labelledby="aiSidebarLabel">
+      <div class="section-head" id="aiSidebarLabel">AI Actions</div>
+      <div style="display:flex;flex-direction:column;gap:var(--sp3)">
+        <button class="abtn sm" id="taskCritiqueBtn">Critique Backlog</button>
+        <button class="abtn sm" id="backlogCleanupBtn">Clean Up Backlog</button>
+      </div>
+      <!-- Per-item accept/reject panel, hidden until a job runs -->
+      <div id="aiJobPanel" style="display:none;margin-top:var(--sp4)"></div>
+    </section>
   </aside>
 
   <!-- CENTER: backlog + schedule -->
