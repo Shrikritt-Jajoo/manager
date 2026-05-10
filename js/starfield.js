@@ -11,7 +11,8 @@ const Starfield = (() => {
   ];
 
   function cfg() {
-    const s = (typeof AppState !== 'undefined') ? AppState.getSettings() : {};
+    // Phase 0 fix: use AppState.getSettings() which still works in v2 state.js
+    const s = (typeof AppState !== 'undefined') ? (AppState.getSettings() || {}) : {};
     return {
       speedK:     SPEED_MAP[s.starSpeed]    || SPEED_MAP.slow,
       densityK:   DENSITY_MAP[s.starDensity]|| DENSITY_MAP.medium,
@@ -87,7 +88,6 @@ const Starfield = (() => {
 
     ctx.clearRect(0, 0, W, H);
 
-    // specks
     ctx.globalCompositeOperation = 'source-over';
     specks.forEach(sp => {
       ctx.fillStyle = `rgba(238,238,238,${sp.a})`;
@@ -116,6 +116,7 @@ const Starfield = (() => {
       ctx = canvas.getContext('2d');
       resize();
       window.addEventListener('resize', () => resize());
+      // Phase 0 fix: AppState.onMeta still exists in v2 state.js — no change needed
       if (typeof AppState !== 'undefined') {
         AppState.onMeta('settings', () => { build(); });
       }

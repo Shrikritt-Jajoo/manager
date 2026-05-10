@@ -2,13 +2,23 @@
 const Shell = {
   _toastTimer: null,
 
-  toast(msg, duration = 2800) {
+  // Phase 0: added type parameter for AI system compatibility
+  // type: 'info' | 'success' | 'error' | 'warning' (currently all styled the same;
+  //       type is accepted so ai.js calling Shell.toast(msg, type, duration) does not throw)
+  toast(msg, typeOrDuration, duration) {
+    let dur = 2800;
+    // Handle both old signature toast(msg, duration) and new toast(msg, type, duration)
+    if (typeof typeOrDuration === 'number') {
+      dur = typeOrDuration;
+    } else if (typeof duration === 'number') {
+      dur = duration;
+    }
     const el = document.getElementById('toast');
     if (!el) return;
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(this._toastTimer);
-    this._toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+    this._toastTimer = setTimeout(() => el.classList.remove('show'), dur);
   },
 
   confirm(msg) {
@@ -37,6 +47,10 @@ const Shell = {
     });
   }
 };
+
+// Phase 0: AppShell alias — ai.js from chronoflow calls AppShell.toast()
+// This single alias means ai.js can be copied verbatim with zero changes.
+const AppShell = Shell;
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
 const Onboarding = {
@@ -183,7 +197,6 @@ const Onboarding = {
   },
 
   _bindStep(ov) {
-    // back (steps > 0)
     const back = ov.querySelector('#onbBack');
     if (back) back.onclick = () => { this._step = Math.max(0, this._step - 1); this._render(); };
 
@@ -199,7 +212,6 @@ const Onboarding = {
     }
 
     if (this._step === 2) {
-      // energy dots
       ov.querySelectorAll('.e-dot').forEach(dot => {
         dot.onclick = dot.onkeydown = (e) => {
           if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
@@ -226,8 +238,6 @@ const Onboarding = {
 
       if (skip) skip.onclick = async () => {
         if (!this._slots.length) {
-          const today = new Date();
-          const d = today.toISOString().slice(0,10);
           this._slots.push({ label:'Work', startT:'09:00', endT:'17:00', energy:3 });
         }
         this._step++; this._render();
@@ -275,7 +285,6 @@ const Onboarding = {
   },
 
   async _finish() {
-    // save goal
     if (this._goalTitle) {
       await AppState.add('goals', {
         id: Utils.uid('goal'), title: this._goalTitle,
@@ -283,7 +292,6 @@ const Onboarding = {
       });
     }
 
-    // save slots
     const today = new Date();
     for (const sl of this._slots) {
       const [sh,sm] = sl.startT.split(':').map(Number);
@@ -297,7 +305,7 @@ const Onboarding = {
       });
     }
 
-    // save settings
+    // saveSettings still works exactly as before
     await AppState.saveSettings({ focusDuration: this._focusDur });
     await AppState.setMeta('onboardingComplete', true);
 
