@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChronoFlow — Settings</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/grain.css">
+  <link rel="stylesheet" href="css/starfield.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+<body class="settings-page">
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+<div class="grain"  aria-hidden="true"></div>
+<div class="grain2" aria-hidden="true"></div>
+
+<nav class="settings-nav" role="navigation" aria-label="Main navigation">
+  <button class="abtn" data-nav="index.html">Home</button>
+  <button class="abtn" data-nav="planner.html">Planner</button>
+  <button class="abtn" data-nav="stats.html">Stats</button>
+  <button class="abtn" data-nav="settings.html">Settings</button>
+</nav>
+
+<div class="settings-layout" role="main" id="settingsLayout">
+
+  <!-- VISUAL -->
+  <section class="settings-section" aria-labelledby="visLabel">
+    <div class="settings-section-title" id="visLabel">Visual</div>
+
+    <div class="setting-row">
+      <div><div class="setting-label">Grain intensity</div></div>
+      <div class="seg-ctrl" role="group" aria-label="Grain intensity">
+        <button class="seg-btn" data-seg="grain" data-val="none">None</button>
+        <button class="seg-btn" data-seg="grain" data-val="light">Light</button>
+        <button class="seg-btn active" data-seg="grain" data-val="medium">Medium</button>
+        <button class="seg-btn" data-seg="grain" data-val="heavy">Heavy</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div><div class="setting-label">Star drift speed</div></div>
+      <div class="seg-ctrl" role="group" aria-label="Star drift speed">
+        <button class="seg-btn active" data-seg="starSpeed" data-val="slow">Slow</button>
+        <button class="seg-btn" data-seg="starSpeed" data-val="medium">Medium</button>
+        <button class="seg-btn" data-seg="starSpeed" data-val="fast">Fast</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div><div class="setting-label">Star density</div></div>
+      <div class="seg-ctrl" role="group" aria-label="Star density">
+        <button class="seg-btn" data-seg="starDensity" data-val="low">Low</button>
+        <button class="seg-btn active" data-seg="starDensity" data-val="medium">Medium</button>
+        <button class="seg-btn" data-seg="starDensity" data-val="high">High</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div><div class="setting-label">Font</div></div>
+      <select class="settings-select" id="fontSelect" aria-label="Font family">
+        <option value="Inter, system-ui, sans-serif">Inter</option>
+        <option value="'DM Sans', system-ui, sans-serif">DM Sans</option>
+        <option value="'Space Grotesk', system-ui, sans-serif">Space Grotesk</option>
+        <option value="'Plus Jakarta Sans', system-ui, sans-serif">Plus Jakarta Sans</option>
+        <option value="'Geist', system-ui, sans-serif">Geist</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <div><div class="setting-label">Accent colour</div></div>
+      <input type="color" class="color-swatch" id="accentColor" value="#BFAE99" aria-label="Accent colour picker">
+    </div>
+
+    <div>
+      <div class="setting-label" style="margin-bottom:var(--sp3)">Star body colour biases</div>
+      <div class="color-row" id="starColorRow">
+        <input type="color" class="color-swatch" data-star-col="0" value="#e6e2ff" aria-label="Star colour 1 (cool blue-white)">
+        <input type="color" class="color-swatch" data-star-col="1" value="#ffeae0" aria-label="Star colour 2 (warm gold-white)">
+        <input type="color" class="color-swatch" data-star-col="2" value="#f4defc" aria-label="Star colour 3 (violet-white)">
+        <input type="color" class="color-swatch" data-star-col="3" value="#eeeeee" aria-label="Star colour 4 (neutral)">
+      </div>
+    </div>
+
+    <div>
+      <div class="setting-label" style="margin-bottom:var(--sp3)">Star glow palette</div>
+      <div class="color-row" id="glowColorRow">
+        <input type="color" class="color-swatch" data-glow-col="0" value="#486eff" aria-label="Glow colour 1">
+        <input type="color" class="color-swatch" data-glow-col="1" value="#a848ff" aria-label="Glow colour 2">
+        <input type="color" class="color-swatch" data-glow-col="2" value="#ff4894" aria-label="Glow colour 3">
+        <input type="color" class="color-swatch" data-glow-col="3" value="#48c4da" aria-label="Glow colour 4">
+        <input type="color" class="color-swatch" data-glow-col="4" value="#ff9448" aria-label="Glow colour 5">
+        <input type="color" class="color-swatch" data-glow-col="5" value="#82ffaa" aria-label="Glow colour 6">
+      </div>
+    </div>
+  </section>
+
+  <!-- FOCUS TIMER -->
+  <section class="settings-section" aria-labelledby="timerLabel">
+    <div class="settings-section-title" id="timerLabel">Focus Timer</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Default session length</div>
+        <div class="setting-desc">Minutes per focus session</div>
+      </div>
+      <input class="settings-input" type="number" id="focusDuration" min="5" max="180" value="25" style="width:70px" aria-label="Default focus duration in minutes">
+    </div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Auto-suggest next step on save</div>
+        <div class="setting-desc">Advance step index when session ends</div>
+      </div>
+      <button class="toggle on" id="toggleAutoStep" role="switch" aria-checked="true" aria-label="Auto-suggest next step"></button>
+    </div>
+  </section>
+
+  <!-- AI -->
+  <section class="settings-section" aria-labelledby="aiLabel">
+    <div class="settings-section-title" id="aiLabel">AI (Gemini)</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Gemini API key</div></div>
+      <input class="settings-input" type="password" id="geminiKey" placeholder="AIza…" autocomplete="off" aria-label="Gemini API key" style="width:220px">
+    </div>
+    <div style="display:flex;gap:var(--sp3);align-items:center;margin-top:var(--sp2)">
+      <button class="abtn sm" id="testAiBtn">Test connection</button>
+      <span id="aiTestResult" style="font-size:12px;color:var(--text-muted)"></span>
+    </div>
+  </section>
+
+  <!-- GMAIL -->
+  <section class="settings-section" aria-labelledby="gmailLabel">
+    <div class="settings-section-title" id="gmailLabel">Gmail</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Connect Gmail account</div>
+        <div class="setting-desc">Requires running via http://localhost (see docs)</div>
+      </div>
+      <button class="abtn sm" id="gmailConnectBtn">Connect</button>
+    </div>
+    <div id="gmailStatus" style="font-size:12px;color:var(--text-muted);margin-top:var(--sp2)"></div>
+    <div class="setting-row" style="margin-top:var(--sp4)">
+      <div>
+        <div class="setting-label">Auto-send schedule at</div>
+      </div>
+      <div class="toggle-wrap">
+        <input class="settings-input" type="time" id="autoSendTime" value="07:00" style="width:90px;color-scheme:dark" aria-label="Auto-send time">
+        <button class="toggle" id="toggleAutoSend" role="switch" aria-checked="false" aria-label="Enable auto-send"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section class="settings-section" aria-labelledby="dataLabel">
+    <div class="settings-section-title" id="dataLabel">Data</div>
+    <div class="data-actions">
+      <button class="abtn sm" id="exportBtn">Export all data as JSON</button>
+      <div style="display:flex;align-items:center;gap:var(--sp3)">
+        <button class="abtn sm" id="importBtn">Import from JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" aria-label="Import JSON file">
+        <span id="importStatus" style="font-size:12px;color:var(--text-muted)"></span>
+      </div>
+      <button class="abtn sm" id="clearCompletedBtn">Clear completed tasks</button>
+      <button class="abtn sm danger" id="resetBtn">Factory reset</button>
+      <button class="abtn sm" id="restartOnboardingBtn">Restart onboarding</button>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/starfield.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/gmail.js"></script>
+<script src="js/settings.js"></script>
+</body>
+</html>

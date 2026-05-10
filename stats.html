@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChronoFlow — Stats</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/grain.css">
+  <link rel="stylesheet" href="css/starfield.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="css/stats.css">
+</head>
+<body class="stats-page">
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+<div class="grain"  aria-hidden="true"></div>
+<div class="grain2" aria-hidden="true"></div>
+
+<nav class="stats-nav" role="navigation" aria-label="Main navigation">
+  <button class="abtn" data-nav="index.html">Home</button>
+  <button class="abtn" data-nav="planner.html">Planner</button>
+  <button class="abtn" data-nav="stats.html">Stats</button>
+  <button class="abtn" data-nav="settings.html">Settings</button>
+</nav>
+
+<div class="stats-layout" role="main">
+
+  <!-- today metrics -->
+  <section aria-labelledby="todayLabel">
+    <div class="stats-section-title" id="todayLabel">Today</div>
+    <div class="stats-grid" style="margin-top:var(--sp4)">
+      <div class="metric-card">
+        <div class="metric-val" id="statFocusMin">0</div>
+        <div class="metric-lbl">Focus minutes</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" id="statSessions">0</div>
+        <div class="metric-lbl">Sessions</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" id="statCompleted">0</div>
+        <div class="metric-lbl">Tasks completed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- streak -->
+  <section aria-labelledby="streakLabel">
+    <div class="stats-section-title" id="streakLabel">Streak</div>
+    <div class="metric-card" style="margin-top:var(--sp4);display:inline-flex;flex-direction:column;gap:var(--sp3);min-width:200px">
+      <div class="metric-val" id="statStreak">0</div>
+      <div class="metric-lbl">Consecutive eligible days</div>
+      <div class="streak-dots" id="streakDots" aria-label="Last 7 days streak"></div>
+    </div>
+  </section>
+
+  <!-- weekly chart -->
+  <section aria-labelledby="weekLabel">
+    <div class="stats-section-title" id="weekLabel">This Week — Focus Minutes</div>
+    <div style="margin-top:var(--sp4)">
+      <canvas id="weekChart" class="chart-box" role="img" aria-label="Weekly focus minutes bar chart"></canvas>
+    </div>
+  </section>
+
+  <!-- completion rate -->
+  <section aria-labelledby="rateLabel">
+    <div class="stats-section-title" id="rateLabel">Task Completion Rate</div>
+    <div style="display:flex;align-items:center;gap:var(--sp6);margin-top:var(--sp4)">
+      <canvas id="rateChart" width="120" height="120" role="img" aria-label="Completion rate arc"></canvas>
+      <div>
+        <div class="metric-val" id="statRate">0%</div>
+        <div class="metric-lbl">Tasks completed vs backlog</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/starfield.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/stats.js"></script>
+</body>
+</html>

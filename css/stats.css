@@ -1,0 +1,30 @@
+body.stats-page { overflow: auto; height: auto; min-height: 100vh; }
+.stats-layout {
+  position: relative; z-index: 7;
+  padding: 80px var(--sp8) var(--sp8);
+  max-width: 860px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: var(--sp8);
+}
+.stats-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp5);
+}
+.metric-card {
+  padding: var(--sp6);
+  background: rgba(255,255,255,.025);
+  clip-path: var(--clip);
+  display: flex; flex-direction: column; gap: var(--sp3);
+}
+.metric-val  { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 260; letter-spacing: .12em; color: var(--accent); }
+.metric-lbl  { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--text-muted); }
+.chart-box   { width: 100%; height: 180px; }
+.streak-dots { display: flex; gap: 10px; margin-top: var(--sp3); }
+.s-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(245,247,251,.14);
+}
+.s-dot.filled { background: var(--accent); }
+.stats-section-title { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--text-muted); }
+.stats-nav {
+  position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px; z-index: 10;
+}

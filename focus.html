@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChronoFlow — Focus</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/grain.css">
+  <link rel="stylesheet" href="css/starfield.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="css/focus.css">
+</head>
+<body class="focus-page">
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+<div class="grain"  aria-hidden="true"></div>
+<div class="grain2" aria-hidden="true"></div>
+
+<div class="focus-overlay" id="focusOverlay" role="main" aria-label="Focus session">
+  <div class="focus-task-title" id="focusTaskTitle">—</div>
+  <div class="focus-step-text"  id="focusStepText">—</div>
+
+  <div class="focus-timer-big" id="focusTimerBig" role="timer" aria-live="off">25:00</div>
+
+  <div class="focus-prog-wrap">
+    <div class="prog-track"><div class="prog-fill" id="focusProg" style="width:0%"></div></div>
+  </div>
+
+  <div class="focus-controls">
+    <button class="abtn" id="focusPauseBtn">Pause</button>
+    <button class="abtn" id="focusEndBtn">End Session</button>
+    <button class="abtn" onclick="window.location.href='index.html'">← Home</button>
+  </div>
+</div>
+
+<!-- Post-session modal (hidden by default) -->
+<div class="session-modal-overlay hidden" id="sessionModalOverlay" role="dialog" aria-modal="true" aria-labelledby="smTitle">
+  <div class="session-modal">
+    <div class="sm-title" id="smTitle">Session Complete</div>
+    <div class="sm-sub"   id="smSub">You worked for — minutes.</div>
+
+    <div style="display:flex;flex-direction:column;gap:var(--sp3)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="sm-label">Progress</div>
+        <div class="sm-range-val" id="smRangeVal">0%</div>
+      </div>
+      <input class="sm-range" type="range" id="smRange" min="0" max="100" value="0" aria-label="Progress percentage">
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:var(--sp2)">
+      <div class="sm-label">Notes (optional)</div>
+      <textarea class="sm-notes" id="smNotes" rows="2" placeholder="What did you get done?"></textarea>
+    </div>
+
+    <div class="sm-actions">
+      <button class="abtn sm" id="smDiscard">Discard</button>
+      <button class="abtn sm" id="smSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/starfield.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/scheduler.js"></script>
+<script src="js/focus.js"></script>
+</body>
+</html>

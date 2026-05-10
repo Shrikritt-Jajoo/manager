@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChronoFlow — Planner</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/grain.css">
+  <link rel="stylesheet" href="css/starfield.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="css/planner.css">
+</head>
+<body class="planner-page">
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+<div class="grain"  aria-hidden="true"></div>
+<div class="grain2" aria-hidden="true"></div>
+
+<!-- always-visible nav on planner -->
+<nav class="planner-nav" role="navigation" aria-label="Main navigation">
+  <button class="abtn" data-nav="index.html">Home</button>
+  <button class="abtn" data-nav="planner.html">Planner</button>
+  <button class="abtn" data-nav="stats.html">Stats</button>
+  <button class="abtn" data-nav="settings.html">Settings</button>
+</nav>
+
+<div class="planner-layout">
+  <!-- LEFT SIDEBAR -->
+  <aside class="panel" id="sidebar">
+    <!-- Quick capture -->
+    <section aria-labelledby="qcLabel">
+      <div class="section-head" id="qcLabel">Quick Capture</div>
+      <form class="quick-form" id="quickForm" autocomplete="off">
+        <input class="q-input" name="title" placeholder="Add a task…" required aria-label="Task title">
+        <button class="abtn sm" type="submit">+</button>
+      </form>
+    </section>
+
+    <!-- Goals -->
+    <section aria-labelledby="goalsLabel">
+      <div class="section-head" id="goalsLabel">Goals</div>
+      <div id="goalsList"></div>
+      <details style="margin-top:var(--sp3)">
+        <summary class="lbl" style="cursor:pointer;list-style:none">+ Add goal</summary>
+        <form class="goal-add-form" id="goalForm" style="margin-top:var(--sp3)" autocomplete="off">
+          <input class="q-input" name="title" placeholder="Goal title" required aria-label="Goal title">
+          <textarea class="q-input" name="description" placeholder="Description (optional)" rows="2" aria-label="Goal description"></textarea>
+          <button class="abtn sm" type="submit">Save goal</button>
+        </form>
+      </details>
+    </section>
+
+    <!-- Time slots -->
+    <section aria-labelledby="slotsLabel">
+      <div class="section-head" id="slotsLabel">Time Slots</div>
+      <div id="slotsList"></div>
+      <details style="margin-top:var(--sp3)">
+        <summary class="lbl" style="cursor:pointer;list-style:none">+ Add slot</summary>
+        <form id="slotForm" style="margin-top:var(--sp4);display:flex;flex-direction:column;gap:var(--sp3)" autocomplete="off">
+          <div class="form-group">
+            <label>Label</label>
+            <input class="settings-input" name="label" placeholder="Morning Focus" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start</label>
+              <input class="settings-input" type="datetime-local" name="start" required style="color-scheme:dark">
+            </div>
+            <div class="form-group">
+              <label>End</label>
+              <input class="settings-input" type="datetime-local" name="end" required style="color-scheme:dark">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Energy level (1–5)</label>
+            <input class="settings-input" type="number" name="energyLevel" min="1" max="5" value="3">
+          </div>
+          <div class="form-group">
+            <label>Recurring</label>
+            <select class="settings-select" name="recurring">
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekdays">Weekdays</option>
+            </select>
+          </div>
+          <button class="abtn sm" type="submit">Save slot</button>
+        </form>
+      </details>
+    </section>
+  </aside>
+
+  <!-- CENTER: backlog + schedule -->
+  <main class="panel" id="centerPanel">
+    <section aria-labelledby="backlogLabel">
+      <div class="section-head" id="backlogLabel">Backlog</div>
+      <div id="backlogList"></div>
+    </section>
+
+    <section aria-labelledby="schedLabel" style="margin-top:var(--sp8)">
+      <div class="section-head" id="schedLabel">Today's Schedule</div>
+      <div id="scheduleList"></div>
+      <div class="sched-actions-row">
+        <button class="abtn sm" id="planDayBtn">Plan My Day</button>
+        <button class="abtn sm" id="sendScheduleBtn">Send Schedule</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- RIGHT: detail + subtasks -->
+  <aside class="detail-panel" id="detailPanel">
+    <div class="section-head">Task Detail</div>
+    <div class="dp-empty" id="detailEmpty">Select a task to edit.</div>
+    <div id="detailContent" style="display:none"></div>
+  </aside>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/starfield.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/scheduler.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/gmail.js"></script>
+<script src="js/planner.js"></script>
+</body>
+</html>

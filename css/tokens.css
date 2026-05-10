@@ -1,0 +1,32 @@
+:root {
+  /* ── Colours ── */
+  --bg:             #000000;
+  --text:           #f5f7fb;
+  --text-muted:     rgba(245,247,251,.55);
+  --text-faint:     rgba(245,247,251,.28);
+  --accent:         #BFAE99;
+  --accent-text:    #000000;
+  --progress-track: rgba(255,255,255,.09);
+
+  /* ── Typography ── */
+  --font:           Inter, system-ui, sans-serif;
+
+  /* ── Spacing ── */
+  --sp1: .25rem;
+  --sp2: .5rem;
+  --sp3: .75rem;
+  --sp4: 1rem;
+  --sp5: 1.25rem;
+  --sp6: 1.5rem;
+  --sp8: 2rem;
+
+  /* ── Motion ── */
+  --t-fast:   .18s ease;
+  --t-base:   .22s ease;
+  --t-slow:   .38s ease;
+  --t-mask:   .40s ease;
+  --t-prog:   width .6s ease;
+
+  /* ── Clip geometry ── */
+  --clip: polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+}

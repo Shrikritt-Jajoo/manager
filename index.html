@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChronoFlow</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/grain.css">
+  <link rel="stylesheet" href="css/starfield.css">
+  <link rel="stylesheet" href="css/shell.css">
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+<div class="grain"  aria-hidden="true"></div>
+<div class="grain2" aria-hidden="true"></div>
+
+<div class="ui" id="ui">
+  <!-- blur masks -->
+  <div class="mask-top"></div>
+  <div class="mask-bottom"></div>
+  <div class="mask-br"></div>
+
+  <!-- nav -->
+  <nav class="nav" id="nav" role="navigation" aria-label="Main navigation">
+    <button class="abtn" data-nav="index.html">Home</button>
+    <button class="abtn" data-nav="planner.html">Planner</button>
+    <button class="abtn" data-nav="stats.html">Stats</button>
+    <button class="abtn" data-nav="settings.html">Settings</button>
+  </nav>
+
+  <!-- clock / focus timer (same position, swap on focus) -->
+  <div class="clock-wrap" id="clockWrap" role="timer" aria-live="polite">
+    <!-- Clock (shown when no focus active) -->
+    <div class="time-display" id="clockTime">00:00</div>
+    <div class="date-display" id="clockDate">—</div>
+
+    <!-- Focus timer (shown when focus active) -->
+    <div class="focus-timer-center hidden" id="homeFocusTimer" aria-label="Focus timer">24:00</div>
+    <div class="focus-ctrl-hover hidden" id="focusCtrlHover">
+      <button class="abtn sm" id="homePauseBtn">Pause</button>
+      <button class="abtn sm" id="homeEndBtn">End</button>
+    </div>
+  </div>
+
+  <!-- bottom-right task block -->
+  <div class="br-block" id="brBlock" aria-label="Current task">
+    <div class="lbl">Current Task</div>
+    <div class="br-task-name" id="brTaskName">—</div>
+    <div class="prog-track br-prog"><div class="prog-fill" id="brProg" style="width:0%"></div></div>
+    <div class="br-timer" id="brTimer">—</div>
+  </div>
+
+  <!-- bottom-centre subtask strip -->
+  <div class="strip" id="strip" aria-label="Current step">
+    <button class="abtn step-arrow" id="stepPrev" aria-label="Previous step">&#8249;</button>
+    <div class="strip-meta">
+      <div class="strip-sub" id="stripSub">—</div>
+      <div class="strip-step" id="stripStep">—</div>
+    </div>
+    <button class="abtn step-arrow" id="stepNext" aria-label="Next step">&#8250;</button>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/db.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/starfield.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>

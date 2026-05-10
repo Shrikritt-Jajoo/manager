@@ -1,0 +1,80 @@
+/* ── Clock & timer zone ── */
+.clock-wrap {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
+  text-align: center;
+  z-index: 7;
+}
+.time-display {
+  font-size: clamp(5rem, 13.5vw, 10.8rem);
+  font-weight: 260;
+  letter-spacing: .22em;
+  line-height: .9;
+  margin-left: .22em;
+  transition: opacity var(--t-slow);
+  user-select: none;
+}
+.date-display {
+  font-size: 12px; letter-spacing: .34em;
+  text-transform: uppercase; color: var(--text-muted);
+  transition: opacity var(--t-slow);
+  user-select: none;
+}
+/* focus timer replaces clock */
+.focus-timer-center {
+  font-size: clamp(5rem, 13.5vw, 10.8rem);
+  font-weight: 260; letter-spacing: .22em;
+  line-height: .9; margin-left: .22em;
+  color: var(--accent);
+  transition: opacity var(--t-slow);
+  user-select: none;
+  cursor: default;
+}
+.focus-timer-center.paused { opacity: .55; }
+.focus-ctrl-hover {
+  display: flex; gap: var(--sp3);
+  opacity: 0;
+  transition: opacity var(--t-slow);
+  pointer-events: none;
+}
+.clock-wrap:hover .focus-ctrl-hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+.hidden { display: none !important; }
+
+/* ── Bottom-right block ── */
+.br-block {
+  position: absolute; right: 28px; bottom: 28px;
+  display: flex; flex-direction: column;
+  gap: 10px; align-items: flex-end;
+  opacity: 0; transition: opacity var(--t-slow);
+  z-index: 7;
+}
+.br-block.show { opacity: 1; }
+.br-task-name {
+  font-size: 13px; color: var(--text);
+  text-align: right; max-width: 280px;
+}
+.br-prog { width: 200px; }
+.br-timer {
+  font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+
+/* ── Subtask strip ── */
+.strip {
+  position: absolute; left: 50%; bottom: 28px;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px;
+  min-width: 520px; max-width: 700px;
+  opacity: 0; transition: opacity var(--t-slow);
+  z-index: 7;
+}
+.strip.show { opacity: 1; }
+.strip-meta { flex: 1; min-width: 0; }
+.strip-sub  { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.strip-step { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.step-arrow { font-size: 20px; padding: 4px 12px; }
