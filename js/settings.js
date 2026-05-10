@@ -1,5 +1,6 @@
 'use strict';
 // Phase 7: removed duplicate Starfield.init(); added tab switching logic.
+// Phase G: built out #aiJobsPanel — job cards with enable toggle + run-now + output UI.
 (async () => {
   await AppState.init();
   Shell.bindNavButtons();
@@ -13,6 +14,7 @@ const SettingsPage = {
     this._loadValues();
     this._bindTabs();
     this._bindAll();
+    this._buildAiJobsPanel();
   },
 
   // ---- Tab switching ---------------------------------------------------
@@ -24,16 +26,254 @@ const SettingsPage = {
 
   _switchTab(name) {
     this._activeTab = name;
-    // Update tab buttons
     document.querySelectorAll('.stab').forEach(btn => {
       const active = btn.dataset.tab === name;
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-selected', active);
     });
-    // Show/hide panels
     document.querySelectorAll('[data-tab-panel]').forEach(panel => {
       panel.classList.toggle('hidden', panel.dataset.tabPanel !== name);
     });
+  },
+
+  // ---- AI Jobs Panel ---------------------------------------------------
+  // Renders one card per registered job inside #aiJobsPanel.
+  // Each card shows: label, trigger badge, enabled toggle, Run now button,
+  // and an inline output area that fills after a run.
+  _buildAiJobsPanel() {
+    const panel = document.getElementById('aiJobsPanel');
+    if (!panel) return;
+
+    const jobs    = AppState.get('registeredAiJobs');
+    const aiCfg   = AppState.getConfig('aiConfig') || {};
+    const disabled = new Set(aiCfg.disabledJobs || []);
+
+    if (!jobs.length) {
+      panel.innerHTML = '<div style="font-size:12px;color:var(--text-faint);margin-top:var(--sp5)">No AI jobs registered.</div>';
+      return;
+    }
+
+    panel.innerHTML = '';
+
+    // Section divider
+    const title = document.createElement('div');
+    title.style.cssText = 'font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-top:var(--sp6);margin-bottom:var(--sp3)';
+    title.textContent = 'Registered Jobs';
+    panel.appendChild(title);
+
+    jobs.forEach(job => {
+      const isEnabled = !disabled.has(job.id);
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid rgba(245,247,251,.08);border-radius:8px;padding:var(--sp4);margin-bottom:var(--sp4)';
+      card.dataset.jobCard = job.id;
+
+      // Header row: label + trigger badge + toggle + run button
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:var(--sp3);flex-wrap:wrap';
+
+      const labelEl = document.createElement('div');
+      labelEl.style.cssText = 'font-size:13px;color:var(--text-base);flex:1;font-weight:500';
+      labelEl.textContent = job.label || job.id;
+
+      const triggerBadge = document.createElement('span');
+      triggerBadge.style.cssText = 'font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);background:rgba(191,174,153,.12);padding:2px 7px;border-radius:4px';
+      triggerBadge.textContent = job.trigger || 'manual';
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = `toggle${isEnabled ? ' on' : ''}`;
+      toggleBtn.setAttribute('role', 'switch');
+      toggleBtn.setAttribute('aria-checked', isEnabled);
+      toggleBtn.setAttribute('aria-label', `Enable ${job.label}`);
+      toggleBtn.onclick = async () => {
+        const cfg     = AppState.getConfig('aiConfig') || {};
+        const disSet  = new Set(cfg.disabledJobs || []);
+        const nowOn   = !toggleBtn.classList.contains('on');
+        if (nowOn) disSet.delete(job.id); else disSet.add(job.id);
+        toggleBtn.classList.toggle('on', nowOn);
+        toggleBtn.setAttribute('aria-checked', nowOn);
+        await AppState.setConfig('aiConfig', Object.assign({}, cfg, { disabledJobs: [...disSet] }));
+        Shell.toast(nowOn ? `${job.label} enabled` : `${job.label} disabled`);
+      };
+
+      const runBtn = document.createElement('button');
+      runBtn.className = 'abtn sm';
+      runBtn.textContent = 'Run now';
+      runBtn.onclick = () => this._runJobFromSettings(job, card);
+
+      header.appendChild(labelEl);
+      header.appendChild(triggerBadge);
+      header.appendChild(toggleBtn);
+      header.appendChild(runBtn);
+
+      // Prompt preview (collapsed)
+      const promptPre = document.createElement('div');
+      promptPre.style.cssText = 'font-size:11px;color:var(--text-faint);margin-top:var(--sp3);white-space:pre-wrap;max-height:60px;overflow:hidden;cursor:pointer;border-top:1px solid rgba(245,247,251,.05);padding-top:var(--sp3)';
+      promptPre.title = 'Click to expand system prompt';
+      promptPre.textContent = (job.systemPrompt || '').slice(0, 120) + ((job.systemPrompt||'').length > 120 ? '…' : '');
+      promptPre.onclick = () => {
+        const expanded = promptPre.style.maxHeight !== 'none';
+        promptPre.style.maxHeight = expanded ? 'none' : '60px';
+        promptPre.style.overflow  = expanded ? 'visible' : 'hidden';
+        if (expanded) promptPre.textContent = job.systemPrompt || '';
+        else promptPre.textContent = (job.systemPrompt || '').slice(0, 120) + '…';
+      };
+
+      // Output area (hidden until run)
+      const outputArea = document.createElement('div');
+      outputArea.dataset.jobOutput = job.id;
+      outputArea.style.display = 'none';
+      outputArea.style.marginTop = 'var(--sp4)';
+
+      card.appendChild(header);
+      card.appendChild(promptPre);
+      card.appendChild(outputArea);
+      panel.appendChild(card);
+    });
+  },
+
+  async _runJobFromSettings(job, card) {
+    const outputArea = card.querySelector(`[data-job-output="${job.id}"]`);
+    if (!outputArea) return;
+
+    if (!AI.isOnline()) { Shell.toast('No internet — AI unavailable offline'); return; }
+    if (!AI._getKey())  { Shell.toast('Add Gemini API key above first'); return; }
+
+    outputArea.style.display = '';
+    outputArea.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">Running…</div>';
+
+    try {
+      const result = await AI.runJob(job.id);
+      this._renderJobOutput(job, result, outputArea);
+    } catch(e) {
+      outputArea.innerHTML = `<div style="font-size:12px;color:var(--text-faint)">✗ ${Utils.escapeHtml(e.message)}</div>`;
+      Shell.toast('AI error: ' + e.message);
+    }
+  },
+
+  _renderJobOutput(job, result, outputArea) {
+    outputArea.innerHTML = '';
+    const type = job.outputSchema && job.outputSchema.type;
+
+    // ---- email output ----
+    if (type === 'email') {
+      const subjectEl = document.createElement('div');
+      subjectEl.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:var(--sp2)';
+      subjectEl.textContent = 'Subject: ' + (result.subject || '(none)');
+
+      const bodyEl = document.createElement('div');
+      bodyEl.style.cssText = 'font-size:12px;color:var(--text-faint);white-space:pre-wrap;max-height:200px;overflow-y:auto;border:1px solid rgba(245,247,251,.08);padding:var(--sp3);border-radius:6px';
+      bodyEl.textContent = result.body || '';
+
+      const actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:var(--sp3);margin-top:var(--sp3)';
+
+      const sendBtn = document.createElement('button');
+      sendBtn.className = 'abtn sm';
+      sendBtn.textContent = 'Send via Gmail';
+      sendBtn.onclick = async () => {
+        try {
+          await Gmail.sendSchedule(AppState.get('scheduleBlocks'), result.subject, result.body);
+          Shell.toast('Email sent!');
+          outputArea.style.display = 'none';
+        } catch(e) { Shell.toast('Send failed: ' + e.message); }
+      };
+
+      const discardBtn = document.createElement('button');
+      discardBtn.className = 'abtn sm danger';
+      discardBtn.textContent = 'Discard';
+      discardBtn.onclick = () => { outputArea.style.display = 'none'; outputArea.innerHTML = ''; };
+
+      actions.appendChild(sendBtn);
+      actions.appendChild(discardBtn);
+      outputArea.appendChild(subjectEl);
+      outputArea.appendChild(bodyEl);
+      outputArea.appendChild(actions);
+      return;
+    }
+
+    // ---- weekly-review output ----
+    if (type === 'weekly-review') {
+      const mdEl = document.createElement('div');
+      mdEl.style.cssText = 'font-size:12px;color:var(--text-muted);white-space:pre-wrap;max-height:300px;overflow-y:auto;border:1px solid rgba(245,247,251,.08);padding:var(--sp3);border-radius:6px';
+      mdEl.textContent = result.markdown || '';
+
+      const actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:var(--sp3);margin-top:var(--sp3)';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'abtn sm';
+      copyBtn.textContent = 'Copy';
+      copyBtn.onclick = () => navigator.clipboard.writeText(result.markdown || '').then(() => Shell.toast('Copied!')).catch(() => Shell.toast('Copy failed'));
+
+      const discardBtn = document.createElement('button');
+      discardBtn.className = 'abtn sm danger';
+      discardBtn.textContent = 'Discard';
+      discardBtn.onclick = () => { outputArea.style.display = 'none'; outputArea.innerHTML = ''; };
+
+      actions.appendChild(copyBtn);
+      actions.appendChild(discardBtn);
+      outputArea.appendChild(mdEl);
+      outputArea.appendChild(actions);
+      return;
+    }
+
+    // ---- data output (task-critique, backlog-cleanup, goal-decomposition) ----
+    if (!result || !result.items || !result.items.length) {
+      outputArea.innerHTML = '<div style="font-size:12px;color:var(--text-faint)">No suggestions returned.</div>';
+      return;
+    }
+
+    const accepted = new Set();
+    const summary = document.createElement('div');
+    summary.style.cssText = 'font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:var(--sp3)';
+    summary.textContent = result.summary || 'AI suggestions';
+
+    const listEl = document.createElement('div');
+    result.items.forEach((item, i) => {
+      accepted.add(i);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:var(--sp3);padding:var(--sp2) 0;border-bottom:1px solid rgba(245,247,251,.04)';
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox'; chk.checked = true; chk.style.marginTop = '3px';
+      chk.onchange = () => chk.checked ? accepted.add(i) : accepted.delete(i);
+
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:12px;color:var(--text-muted);flex:1';
+      const actionTag = `<span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-right:5px">${Utils.escapeHtml(item.action || '')}</span>`;
+      const titleStr  = item.payload && item.payload.title
+        ? Utils.escapeHtml(item.payload.title)
+        : (item.id || JSON.stringify(item.payload || {}).slice(0, 80));
+      label.innerHTML = actionTag + titleStr;
+
+      row.appendChild(chk);
+      row.appendChild(label);
+      listEl.appendChild(row);
+    });
+
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:var(--sp3);margin-top:var(--sp4)';
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'abtn sm';
+    applyBtn.textContent = 'Apply selected';
+    applyBtn.onclick = async () => {
+      const count = await AI.applyOutputs(job, result, accepted);
+      Shell.toast(`Applied ${count} change${count !== 1 ? 's' : ''}`);
+      outputArea.style.display = 'none';
+      outputArea.innerHTML = '';
+    };
+
+    const discardBtn = document.createElement('button');
+    discardBtn.className = 'abtn sm danger';
+    discardBtn.textContent = 'Discard all';
+    discardBtn.onclick = () => { outputArea.style.display = 'none'; outputArea.innerHTML = ''; };
+
+    actions.appendChild(applyBtn);
+    actions.appendChild(discardBtn);
+    outputArea.appendChild(summary);
+    outputArea.appendChild(listEl);
+    outputArea.appendChild(actions);
   },
 
   // ---- Load persisted values into controls ----------------------------
