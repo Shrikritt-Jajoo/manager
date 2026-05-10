@@ -23,11 +23,20 @@
   <button class="abtn" data-nav="settings.html">Settings</button>
 </nav>
 
+<!-- Tab bar -->
+<div class="stab-bar" role="tablist" aria-label="Settings sections">
+  <button class="stab active" data-tab="visual"  role="tab" aria-selected="true"  aria-controls="tab-visual">Visual</button>
+  <button class="stab"        data-tab="focus"   role="tab" aria-selected="false" aria-controls="tab-focus">Focus</button>
+  <button class="stab"        data-tab="ai"      role="tab" aria-selected="false" aria-controls="tab-ai">AI</button>
+  <button class="stab"        data-tab="gmail"   role="tab" aria-selected="false" aria-controls="tab-gmail">Gmail</button>
+  <button class="stab"        data-tab="data"    role="tab" aria-selected="false" aria-controls="tab-data">Data</button>
+</div>
+
 <div class="settings-layout" role="main" id="settingsLayout">
 
   <!-- VISUAL -->
-  <section class="settings-section" aria-labelledby="visLabel">
-    <div class="settings-section-title" id="visLabel">Visual</div>
+  <section class="settings-section" id="tab-visual" data-tab-panel="visual" role="tabpanel" aria-labelledby="stab-visual">
+    <div class="settings-section-title">Visual</div>
 
     <div class="setting-row">
       <div><div class="setting-label">Grain intensity</div></div>
@@ -76,10 +85,10 @@
     <div>
       <div class="setting-label" style="margin-bottom:var(--sp3)">Star body colour biases</div>
       <div class="color-row" id="starColorRow">
-        <input type="color" class="color-swatch" data-star-col="0" value="#e6e2ff" aria-label="Star colour 1 (cool blue-white)">
-        <input type="color" class="color-swatch" data-star-col="1" value="#ffeae0" aria-label="Star colour 2 (warm gold-white)">
-        <input type="color" class="color-swatch" data-star-col="2" value="#f4defc" aria-label="Star colour 3 (violet-white)">
-        <input type="color" class="color-swatch" data-star-col="3" value="#eeeeee" aria-label="Star colour 4 (neutral)">
+        <input type="color" class="color-swatch" data-star-col="0" value="#e6e2ff" aria-label="Star colour 1">
+        <input type="color" class="color-swatch" data-star-col="1" value="#ffeae0" aria-label="Star colour 2">
+        <input type="color" class="color-swatch" data-star-col="2" value="#f4defc" aria-label="Star colour 3">
+        <input type="color" class="color-swatch" data-star-col="3" value="#eeeeee" aria-label="Star colour 4">
       </div>
     </div>
 
@@ -97,8 +106,8 @@
   </section>
 
   <!-- FOCUS TIMER -->
-  <section class="settings-section" aria-labelledby="timerLabel">
-    <div class="settings-section-title" id="timerLabel">Focus Timer</div>
+  <section class="settings-section hidden" id="tab-focus" data-tab-panel="focus" role="tabpanel" aria-labelledby="stab-focus">
+    <div class="settings-section-title">Focus Timer</div>
     <div class="setting-row">
       <div>
         <div class="setting-label">Default session length</div>
@@ -116,8 +125,8 @@
   </section>
 
   <!-- AI -->
-  <section class="settings-section" aria-labelledby="aiLabel">
-    <div class="settings-section-title" id="aiLabel">AI (Gemini)</div>
+  <section class="settings-section hidden" id="tab-ai" data-tab-panel="ai" role="tabpanel" aria-labelledby="stab-ai">
+    <div class="settings-section-title">AI (Gemini)</div>
     <div class="setting-row">
       <div><div class="setting-label">Gemini API key</div></div>
       <input class="settings-input" type="password" id="geminiKey" placeholder="AIza…" autocomplete="off" aria-label="Gemini API key" style="width:220px">
@@ -126,11 +135,13 @@
       <button class="abtn sm" id="testAiBtn">Test connection</button>
       <span id="aiTestResult" style="font-size:12px;color:var(--text-muted)"></span>
     </div>
+    <!-- AI jobs panel placeholder — populated by Phase G -->
+    <div id="aiJobsPanel"></div>
   </section>
 
   <!-- GMAIL -->
-  <section class="settings-section" aria-labelledby="gmailLabel">
-    <div class="settings-section-title" id="gmailLabel">Gmail</div>
+  <section class="settings-section hidden" id="tab-gmail" data-tab-panel="gmail" role="tabpanel" aria-labelledby="stab-gmail">
+    <div class="settings-section-title">Gmail</div>
     <div class="setting-row">
       <div>
         <div class="setting-label">Connect Gmail account</div>
@@ -140,9 +151,7 @@
     </div>
     <div id="gmailStatus" style="font-size:12px;color:var(--text-muted);margin-top:var(--sp2)"></div>
     <div class="setting-row" style="margin-top:var(--sp4)">
-      <div>
-        <div class="setting-label">Auto-send schedule at</div>
-      </div>
+      <div><div class="setting-label">Auto-send schedule at</div></div>
       <div class="toggle-wrap">
         <input class="settings-input" type="time" id="autoSendTime" value="07:00" style="width:90px;color-scheme:dark" aria-label="Auto-send time">
         <button class="toggle" id="toggleAutoSend" role="switch" aria-checked="false" aria-label="Enable auto-send"></button>
@@ -151,8 +160,8 @@
   </section>
 
   <!-- DATA -->
-  <section class="settings-section" aria-labelledby="dataLabel">
-    <div class="settings-section-title" id="dataLabel">Data</div>
+  <section class="settings-section hidden" id="tab-data" data-tab-panel="data" role="tabpanel" aria-labelledby="stab-data">
+    <div class="settings-section-title">Data</div>
     <div class="data-actions">
       <button class="abtn sm" id="exportBtn">Export all data as JSON</button>
       <div style="display:flex;align-items:center;gap:var(--sp3)">

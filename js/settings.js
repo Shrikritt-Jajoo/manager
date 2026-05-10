@@ -1,17 +1,42 @@
 'use strict';
+// Phase 7: removed duplicate Starfield.init(); added tab switching logic.
 (async () => {
   await AppState.init();
-  Starfield.init();
   Shell.bindNavButtons();
   SettingsPage.init();
 })();
 
 const SettingsPage = {
+  _activeTab: 'visual',
+
   init() {
     this._loadValues();
+    this._bindTabs();
     this._bindAll();
   },
 
+  // ---- Tab switching ---------------------------------------------------
+  _bindTabs() {
+    document.querySelectorAll('.stab').forEach(btn => {
+      btn.onclick = () => this._switchTab(btn.dataset.tab);
+    });
+  },
+
+  _switchTab(name) {
+    this._activeTab = name;
+    // Update tab buttons
+    document.querySelectorAll('.stab').forEach(btn => {
+      const active = btn.dataset.tab === name;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active);
+    });
+    // Show/hide panels
+    document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+      panel.classList.toggle('hidden', panel.dataset.tabPanel !== name);
+    });
+  },
+
+  // ---- Load persisted values into controls ----------------------------
   _loadValues() {
     const s = AppState.getSettings();
     this._setSegActive('grain',       s.grain        || 'medium');
@@ -37,8 +62,10 @@ const SettingsPage = {
     if (fd) fd.value = s.focusDuration || 25;
 
     const tas = document.getElementById('toggleAutoStep');
-    if (tas) tas.classList.toggle('on', s.autoStep !== false);
-    if (tas) tas.setAttribute('aria-checked', s.autoStep !== false);
+    if (tas) {
+      tas.classList.toggle('on', s.autoStep !== false);
+      tas.setAttribute('aria-checked', s.autoStep !== false);
+    }
 
     const gk = document.getElementById('geminiKey');
     if (gk) gk.value = s.geminiKey || '';
@@ -50,7 +77,10 @@ const SettingsPage = {
     if (ast) ast.value = s.autoSendTime || '07:00';
 
     const tas2 = document.getElementById('toggleAutoSend');
-    if (tas2) { tas2.classList.toggle('on', !!s.autoSend); tas2.setAttribute('aria-checked', !!s.autoSend); }
+    if (tas2) {
+      tas2.classList.toggle('on', !!s.autoSend);
+      tas2.setAttribute('aria-checked', !!s.autoSend);
+    }
   },
 
   _setSegActive(group, val) {
@@ -59,8 +89,9 @@ const SettingsPage = {
     });
   },
 
+  // ---- Bind all controls -----------------------------------------------
   _bindAll() {
-    // seg controls
+    // Segmented controls
     document.querySelectorAll('.seg-btn').forEach(btn => {
       btn.onclick = async () => {
         const group = btn.dataset.seg, val = btn.dataset.val;
@@ -70,17 +101,16 @@ const SettingsPage = {
       };
     });
 
-    // font
+    // Font
     const fontSel = document.getElementById('fontSelect');
-    if (fontSel) fontSel.onchange = async () => {
+    if (fontSel) fontSel.onchange = async () =>
       await AppState.saveSettings({ font: fontSel.value });
-    };
 
-    // accent colour
+    // Accent colour
     const ac = document.getElementById('accentColor');
     if (ac) ac.oninput = async () => await AppState.saveSettings({ accentColor: ac.value });
 
-    // star body colours
+    // Star body colours
     document.querySelectorAll('[data-star-col]').forEach(inp => {
       inp.oninput = async () => {
         const cols = Array.from(document.querySelectorAll('[data-star-col]')).map(el => el.value);
@@ -89,7 +119,7 @@ const SettingsPage = {
       };
     });
 
-    // glow colours
+    // Glow colours
     document.querySelectorAll('[data-glow-col]').forEach(inp => {
       inp.oninput = async () => {
         const cols = Array.from(document.querySelectorAll('[data-glow-col]')).map(el => el.value);
@@ -98,11 +128,12 @@ const SettingsPage = {
       };
     });
 
-    // focus duration
+    // Focus duration
     const fd = document.getElementById('focusDuration');
-    if (fd) fd.onchange = async () => await AppState.saveSettings({ focusDuration: parseInt(fd.value) || 25 });
+    if (fd) fd.onchange = async () =>
+      await AppState.saveSettings({ focusDuration: parseInt(fd.value) || 25 });
 
-    // auto step toggle
+    // Auto-step toggle
     const tas = document.getElementById('toggleAutoStep');
     if (tas) tas.onclick = async () => {
       const next = !tas.classList.contains('on');
@@ -111,11 +142,12 @@ const SettingsPage = {
       await AppState.saveSettings({ autoStep: next });
     };
 
-    // gemini key
+    // Gemini key — save on blur
     const gk = document.getElementById('geminiKey');
-    if (gk) gk.onblur = async () => await AppState.saveSettings({ geminiKey: gk.value.trim() });
+    if (gk) gk.onblur = async () =>
+      await AppState.saveSettings({ geminiKey: gk.value.trim() });
 
-    // test AI
+    // Test AI connection
     const testBtn = document.getElementById('testAiBtn');
     const testRes = document.getElementById('aiTestResult');
     if (testBtn) testBtn.onclick = async () => {
@@ -128,22 +160,24 @@ const SettingsPage = {
       }
     };
 
-    // gmail connect
+    // Gmail connect
     const gmBtn = document.getElementById('gmailConnectBtn');
     if (gmBtn) gmBtn.onclick = async () => {
       try {
         await Gmail.connect();
-        const s = AppState.getSettings();
+        const s  = AppState.getSettings();
         const st = document.getElementById('gmailStatus');
         if (st) st.textContent = `Connected: ${s.gmailAddress}`;
         Shell.toast('Gmail connected!');
       } catch(e) { Shell.toast('Gmail: ' + e.message); }
     };
 
-    // auto send time
+    // Auto-send time
     const ast = document.getElementById('autoSendTime');
-    if (ast) ast.onchange = async () => await AppState.saveSettings({ autoSendTime: ast.value });
+    if (ast) ast.onchange = async () =>
+      await AppState.saveSettings({ autoSendTime: ast.value });
 
+    // Auto-send toggle
     const tas2 = document.getElementById('toggleAutoSend');
     if (tas2) tas2.onclick = async () => {
       const next = !tas2.classList.contains('on');
@@ -152,7 +186,7 @@ const SettingsPage = {
       await AppState.saveSettings({ autoSend: next });
     };
 
-    // export
+    // Export
     const exportBtn = document.getElementById('exportBtn');
     if (exportBtn) exportBtn.onclick = async () => {
       const payload = {
@@ -172,7 +206,7 @@ const SettingsPage = {
       Shell.toast('Exported!');
     };
 
-    // import
+    // Import
     const importBtn  = document.getElementById('importBtn');
     const importFile = document.getElementById('importFile');
     const importStat = document.getElementById('importStatus');
@@ -191,10 +225,12 @@ const SettingsPage = {
         }
         if (importStat) importStat.textContent = 'Import complete';
         Shell.toast('Data imported!');
-      } catch(e) { if (importStat) importStat.textContent = 'Import failed: ' + e.message; }
+      } catch(e) {
+        if (importStat) importStat.textContent = 'Import failed: ' + e.message;
+      }
     };
 
-    // clear completed
+    // Clear completed tasks
     const ccBtn = document.getElementById('clearCompletedBtn');
     if (ccBtn) ccBtn.onclick = async () => {
       if (!await Shell.confirm('Delete all completed tasks?')) return;
@@ -203,7 +239,7 @@ const SettingsPage = {
       Shell.toast('Cleared completed tasks');
     };
 
-    // reset
+    // Factory reset
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) resetBtn.onclick = async () => {
       if (!await Shell.confirm('FACTORY RESET — delete all data? This cannot be undone.')) return;
@@ -212,14 +248,15 @@ const SettingsPage = {
         await DB.clear(store);
         AppState.get(store).length = 0;
       }
-      for (const k of ['currentTaskId','currentSubtaskId','focusActive','focusTimerRemain','onboardingComplete','streakData','gmailToken','settings']) {
+      for (const k of ['currentTaskId','currentSubtaskId','focusActive','focusTimerRemain',
+                        'onboardingComplete','streakData','gmailToken','settings']) {
         await DB.setMeta(k, undefined);
       }
       Shell.toast('Reset complete — reloading…');
       setTimeout(() => window.location.href = 'index.html', 1200);
     };
 
-    // restart onboarding
+    // Restart onboarding
     const robBtn = document.getElementById('restartOnboardingBtn');
     if (robBtn) robBtn.onclick = async () => {
       await DB.setMeta('onboardingComplete', false);

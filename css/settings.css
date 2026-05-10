@@ -1,31 +1,82 @@
+/* ---- Page shell ---- */
 body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
+
+.settings-nav {
+  position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px; z-index: 10;
+}
+
+/* ---- Tab bar ---- */
+.stab-bar {
+  position: fixed;
+  top: 68px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 2px;
+  z-index: 9;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 4px;
+  clip-path: var(--clip);
+}
+.stab {
+  padding: 6px 14px;
+  background: transparent; border: none;
+  font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--text-faint);
+  clip-path: var(--clip);
+  transition: background var(--t-base), color var(--t-base);
+  cursor: pointer;
+}
+.stab:hover  { color: var(--text-muted); background: rgba(255,255,255,.05); }
+.stab.active { background: var(--accent); color: var(--accent-text); }
+
+/* ---- Layout ---- */
 .settings-layout {
   position: relative; z-index: 7;
-  padding: 80px var(--sp8) var(--sp8);
+  padding: 118px var(--sp8) var(--sp8);
   max-width: 600px; margin: 0 auto;
-  display: flex; flex-direction: column; gap: var(--sp8);
 }
-.settings-section { display: flex; flex-direction: column; gap: var(--sp5); }
-.settings-section-title { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--text-muted); padding-bottom: var(--sp3); border-bottom: 1px solid rgba(245,247,251,.06); }
-.setting-row { display: flex; justify-content: space-between; align-items: center; gap: var(--sp5); }
+
+/* ---- Sections / panels ---- */
+.settings-section {
+  display: flex; flex-direction: column; gap: var(--sp5);
+}
+.settings-section.hidden { display: none; }
+
+.settings-section-title {
+  font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--sp3);
+  border-bottom: 1px solid rgba(245,247,251,.06);
+}
+
+/* ---- Rows ---- */
+.setting-row  { display: flex; justify-content: space-between; align-items: center; gap: var(--sp5); }
 .setting-label { font-size: 13px; color: var(--text); }
 .setting-desc  { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+/* ---- Segmented controls ---- */
 .seg-ctrl { display: flex; gap: 4px; }
 .seg-btn {
   padding: 6px 12px; background: transparent; border: none;
   font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
   color: var(--text-muted); clip-path: var(--clip);
   transition: background var(--t-base), color var(--t-base);
+  cursor: pointer;
 }
-.seg-btn.active { background: var(--accent); color: var(--accent-text); }
-.seg-btn:hover:not(.active) { background: rgba(255,255,255,.07); }
-.color-row { display: flex; gap: var(--sp4); flex-wrap: wrap; align-items: center; }
+.seg-btn.active              { background: var(--accent); color: var(--accent-text); }
+.seg-btn:hover:not(.active)  { background: rgba(255,255,255,.07); }
+
+/* ---- Colour swatches ---- */
+.color-row   { display: flex; gap: var(--sp4); flex-wrap: wrap; align-items: center; }
 .color-swatch {
   width: 28px; height: 28px;
   clip-path: var(--clip);
-  cursor: pointer; border: none;
-  padding: 0;
+  cursor: pointer; border: none; padding: 0;
 }
+
+/* ---- Text / number inputs ---- */
 .settings-input {
   background: transparent; border: none;
   border-bottom: 1px solid rgba(245,247,251,.14);
@@ -33,9 +84,20 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   padding: var(--sp2) 0; width: 100%;
   transition: border-color var(--t-base);
 }
-.settings-input:focus { border-bottom-color: var(--accent); }
-.settings-input[type=password] { letter-spacing: .22em; }
-.settings-input[type=number]   { width: 80px; }
+.settings-input:focus            { border-bottom-color: var(--accent); outline: none; }
+.settings-input[type=password]   { letter-spacing: .22em; }
+.settings-input[type=number]     { width: 80px; }
+
+/* ---- Select ---- */
+.settings-select {
+  background: transparent; border: none;
+  border-bottom: 1px solid rgba(245,247,251,.14);
+  color: var(--text); font-size: 13px;
+  padding: var(--sp2) 0;
+}
+.settings-select option { background: #111; }
+
+/* ---- Toggle switch ---- */
 .toggle-wrap { display: flex; align-items: center; gap: var(--sp3); }
 .toggle {
   width: 36px; height: 20px; border-radius: 10px;
@@ -50,17 +112,8 @@ body.settings-page { overflow: auto; height: auto; min-height: 100vh; }
   background: var(--text-muted);
   transition: transform var(--t-base), background var(--t-base);
 }
-.toggle.on { background: var(--accent); }
-.toggle.on::after { transform: translateX(16px); background: var(--accent-text); }
-.settings-select {
-  background: transparent; border: none;
-  border-bottom: 1px solid rgba(245,247,251,.14);
-  color: var(--text); font-size: 13px;
-  padding: var(--sp2) 0;
-}
-.settings-select option { background: #111; }
+.toggle.on          { background: var(--accent); }
+.toggle.on::after   { transform: translateX(16px); background: var(--accent-text); }
+
+/* ---- Data actions ---- */
 .data-actions { display: flex; flex-direction: column; gap: var(--sp4); }
-.settings-nav {
-  position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 6px; z-index: 10;
-}
